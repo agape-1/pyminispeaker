@@ -1,0 +1,75 @@
+# `feature_request.yml` code is AI-generated via Claude Sonnet 4 and manually verified for correctness
+name: Feature Request
+description: Suggest a new feature for pyminispeaker
+title: "[FEATURE]: "
+labels: ["enhancement", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide details below to help us understand your request.
+
+  - type: checkboxes
+    id: pre-submission
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues and confirmed this feature hasn't been requested
+          required: true
+        - label: I have checked the documentation to ensure this feature doesn't already exist
+          required: true
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: Feature Summary
+      description: Brief description of the feature you'd like to see
+      placeholder: A concise summary of what you want to add or change
+    validations:
+      required: true
+
+  - type: textarea
+    id: example-usage
+    attributes:
+      label: Example Usage
+      description: Show how this feature would be used
+      render: python
+      placeholder: |
+        # Example of how the feature would work
+        import pyminispeaker
+        # ... example code showing the proposed feature
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would be helpful
+        - High - Important for my use case
+        - Critical - Blocking my project
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to help implement this feature?
+      options:
+        - label: I would be willing to submit a pull request for this feature
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information about this feature request
+      placeholder: |
+        - Links to relevant documentation or examples
+        - Screenshots or mockups
+        - Related issues or discussions
+        - Any other helpful information
