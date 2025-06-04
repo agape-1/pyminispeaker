@@ -1,2 +1,2 @@
 # pyminispeaker
-Python speaker abstraction library via [`pyminiaudio`](https://github.com/irmen/pyminiaudio) backend
+[`py`[thonic]`mini`audio](https://github.com/irmen/pyminiaudio) `speaker` abstraction library
