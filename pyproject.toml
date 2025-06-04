@@ -1,7 +1,7 @@
 [project]
 name = "pyminispeaker"
 version = "0.1.0"
-description = "Python speaker abstraction library via [`pyminiaudio`](https://github.com/irmen/pyminiaudio) backend"
+description = "[`py`[thonic]`mini`audio](https://github.com/irmen/pyminiaudio) `speaker` abstraction library"
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
