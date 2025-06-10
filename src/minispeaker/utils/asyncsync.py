@@ -3,11 +3,32 @@ from typing import Any, Literal, Coroutine, Optional, AsyncGenerator, Generator,
 from asyncio import AbstractEventLoop
 
 # Helpers
-from asyncio import get_event_loop, run_coroutine_threadsafe, get_running_loop, to_thread
+from asyncio import get_event_loop, run_coroutine_threadsafe, get_running_loop
 
 # Main dependencies
 from threading import Event as ThreadEvent
 from collections import deque
+
+
+
+async def to_thread(func, /, *args, **kwargs): # Python 3.8 does not have `to_thread`: Copied from https://github.com/python/cpython/blob/main/Lib/asyncio/threads.py#L12
+    """Asynchronously run function *func* in a separate thread.
+
+    Any *args and **kwargs supplied for this function are directly passed
+    to *func*. Also, the current :class:`contextvars.Context` is propagated,
+    allowing context variables from the main thread to be accessed in the
+    separate thread.
+
+    Return a coroutine that can be awaited to get the eventual result of *func*.
+    """
+    import asyncio
+    import contextvars
+    import functools
+    loop = asyncio.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)
+
 
 def poll_async_generator(stream: AsyncGenerator[Any, Any], default_empty_factory: Callable[[], Any] = lambda : None, loop: Optional[AbstractEventLoop] = None) -> Generator[Any, None, None]:
     """
