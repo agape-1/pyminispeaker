@@ -1,4 +1,5 @@
 # Typing
+from __future__ import annotations
 from dataclasses import dataclass, InitVar, field
 from asyncio import AbstractEventLoop
 from typing_extensions import Annotated, Dict, List, Optional, Generator, Literal, Union, Callable, AsyncGenerator, Any
