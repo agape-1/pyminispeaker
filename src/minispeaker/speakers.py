@@ -12,8 +12,8 @@ from typing_extensions import Buffer # TODO: Inherit from typing.Buffer once Pyt
 from warnings import warn
 from threading import Thread
 from asyncio import get_event_loop, set_event_loop, create_task, Queue
-from utils.miniaudios import sampleformat_to_dtype
-from utils.asyncsync import Event, poll_async_generator
+from minispeaker.utils.miniaudios import sampleformat_to_dtype
+from minispeaker.utils.asyncsync import Event, poll_async_generator
 from numpy import asarray
 from _miniaudio import ffi, lib # ffi, lib may be subject to change because it is imported from an internal library
 from miniaudio import MiniaudioError
