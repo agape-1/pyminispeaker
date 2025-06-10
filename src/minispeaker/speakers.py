@@ -1,7 +1,7 @@
 # Typing
 from dataclasses import dataclass, InitVar, field
 from asyncio import AbstractEventLoop
-from typing import Annotated, Dict, List, Optional, Generator, Literal, Union, Callable, AsyncGenerator, Any
+from typing_extensions import Annotated, Dict, List, Optional, Generator, Literal, Union, Callable, AsyncGenerator, Any
 from types import AsyncGeneratorType, GeneratorType
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
