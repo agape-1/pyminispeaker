@@ -68,7 +68,7 @@ def default_speaker() -> str:
                 name = ffi.string(speaker.name).decode()
                 return name
 
-def available_speakers() -> list[str]:
+def available_speakers() -> List[str]:
     """Retrieves all available speakers by name
 
     Returns:
