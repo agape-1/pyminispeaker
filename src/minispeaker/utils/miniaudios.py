@@ -1,5 +1,5 @@
 # Typing
-from typing import Union
+from typing_extensions import Union
 from numpy import uint8, int16, int32, float32
 
 # Helpers
@@ -8,14 +8,7 @@ from miniaudio import SampleFormat
 
 
 def sampleformat_to_dtype(
-    sample_format: Union[
-        SampleFormat.UNKNOWN,
-        SampleFormat.UNSIGNED8,
-        SampleFormat.SIGNED16,
-        SampleFormat.SIGNED24,
-        SampleFormat.SIGNED32,
-        SampleFormat.FLOAT32,
-    ]
+    sample_format: SampleFormat
 ) -> Union[uint8, int16, int32, float32]:
     """
     Args:
@@ -42,14 +35,7 @@ def sampleformat_to_dtype(
     return convert[sample_format]
 
 
-def dtype_to_sampleformat(dtype: Union[None, uint8, int16, int32, float32]) -> Union[
-    SampleFormat.UNKNOWN,
-    SampleFormat.UNSIGNED8,
-    SampleFormat.SIGNED16,
-    SampleFormat.SIGNED24,
-    SampleFormat.SIGNED32,
-    SampleFormat.FLOAT32,
-]:
+def dtype_to_sampleformat(dtype: Union[None, uint8, int16, int32, float32]) -> SampleFormat:
     """
     Args:
         dtype (Union[None, uint8, int16, int32, float32]): Numpy dtype of the audio sample.
