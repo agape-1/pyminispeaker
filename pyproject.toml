@@ -1,5 +1,5 @@
 [project]
-name = "pyminispeaker"
+name = "minispeaker"
 version = "0.1.0"
 description = "[`py`[thonic]`mini`audio](https://github.com/irmen/pyminiaudio) `speaker` abstraction library"
 readme = "README.md"
@@ -26,7 +26,7 @@ classifiers = [
 keywords = ["sound", "audio", "playback", "async"]
 
 [project.scripts]
-pyminispeaker = "pyminispeaker:main"
+minispeaker = "minispeaker:main"
 
 
 [project.urls]
