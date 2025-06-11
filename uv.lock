@@ -151,7 +151,7 @@ dependencies = [
 requires-dist = [
     { name = "miniaudio", specifier = ">=1.61" },
     { name = "numpy", specifier = ">=1.24.4" },
-    { name = "typing-extensions", specifier = ">=3.6.2" },
+    { name = "typing-extensions", specifier = ">=4" },
 ]
 
 [[package]]
@@ -199,22 +199,10 @@ wheels = [
 ]
 
 [[package]]
-name = "typing"
-version = "3.10.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b0/1b/835d4431805939d2996f8772aca1d2313a57e8860fec0e48e8e7dfe3a477/typing-3.10.0.0.tar.gz", hash = "sha256:13b4ad211f54ddbf93e5901a9967b1e07720c1d1b78d596ac6a439641aa1b130", size = 78962, upload-time = "2021-05-01T18:03:58.186Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/5d/865e17349564eb1772688d8afc5e3081a5964c640d64d1d2880ebaed002d/typing-3.10.0.0-py3-none-any.whl", hash = "sha256:12fbdfbe7d6cca1a42e485229afcb0b0c8259258cfb919b8a5e2a5c953742f89", size = 26320, upload-time = "2021-05-01T18:03:56.398Z" },
-]
-
-[[package]]
 name = "typing-extensions"
-version = "3.6.2"
+version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "typing" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/53/db3c6bf3fc6a57cda61117dc84eb96de7586e2a43ab12e332a91570c5867/typing_extensions-3.6.2.tar.gz", hash = "sha256:e83f825d3ecb61443cf18639f499cabd02d87274e594de3728a1a07bc08a566d", size = 6790, upload-time = "2017-09-17T12:25:20.236Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/23/748b0c9a5578110b31580c8d2643319adcb3ec91f601b50a955051b51f1d/typing_extensions-4.0.0.tar.gz", hash = "sha256:2cdf80e4e04866a9b3689a51869016d36db0814d84b8d8a568d22781d45d27ed", size = 37038, upload-time = "2021-11-15T15:23:58.981Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/cc/4db345e919daa930cb4352e8b2e273bdb9e6d2a72c6e09da811a6127278f/typing_extensions-3.6.2-py3-none-any.whl", hash = "sha256:9d1f70ae4b349f2040e8ca4acf1e7f8edceeff5f8aa49fbef9f9e39116312418", size = 11492, upload-time = "2017-09-17T12:25:19.28Z" },
+    { url = "https://files.pythonhosted.org/packages/17/61/32c3ab8951142e061587d957226b5683d1387fb22d95b4f69186d92616d1/typing_extensions-4.0.0-py3-none-any.whl", hash = "sha256:829704698b22e13ec9eaf959122315eabb370b0884400e9818334d8b677023d9", size = 22615, upload-time = "2021-11-14T22:11:20.075Z" },
 ]
