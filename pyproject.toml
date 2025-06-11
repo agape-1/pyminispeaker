@@ -8,7 +8,7 @@ license = "MIT"
 dependencies = [
     "miniaudio>=1.61",
     "numpy>=1.24.4",
-    "typing-extensions>=4.13.2",
+    "typing-extensions>=3.6.2",
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
