@@ -1,6 +1,6 @@
 # Typing
 from __future__ import annotations
-from typing import Any, Literal, Coroutine, Optional, AsyncGenerator, Generator, Callable
+from typing_extensions import Any, Literal, Coroutine, Optional, AsyncGenerator, Generator, Callable
 from asyncio import AbstractEventLoop
 
 # Helpers

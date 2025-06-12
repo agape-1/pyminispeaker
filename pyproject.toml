@@ -1,14 +1,14 @@
 [project]
 name = "minispeaker"
-version = "0.1.0"
+version = "0.2.1"
 description = "[`py`[thonic]`mini`audio](https://github.com/irmen/pyminiaudio) `speaker` abstraction library"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.8,<3.13"
 license = "MIT"
 dependencies = [
     "miniaudio>=1.61",
-    "numpy>=1.24.4",
-    "typing-extensions>=4.13.2",
+    "numpy>=1.22.0",
+    "typing-extensions>=4.7.0"
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
@@ -25,6 +25,11 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 keywords = ["sound", "audio", "playback", "async"]
+
+[tool.uv]
+constraint-dependencies = [
+    "cffi>=1.12.2; python_version=='3.8' and implementation_name=='cpython'" # NOTE: Cannot compile CFFI for python 3.8 unless CFFI >= 1.21.2 https://cffi.readthedocs.io/en/latest/whatsnew.html#v1-12-2 # NOTE: Line AI-generated and verified for correctness
+]
 
 [project.scripts]
 minispeaker = "minispeaker:main"
