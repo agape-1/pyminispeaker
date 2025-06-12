@@ -26,6 +26,11 @@ classifiers = [
 ]
 keywords = ["sound", "audio", "playback", "async"]
 
+[tool.uv]
+constraint-dependencies = [
+    "cffi>=1.12.2; python_version=='3.8' and implementation_name=='cpython'" # NOTE: Cannot compile CFFI for python 3.8 unless CFFI >= 1.21.2 https://cffi.readthedocs.io/en/latest/whatsnew.html#v1-12-2 # NOTE: Line AI-generated and verified for correctness
+]
+
 [project.scripts]
 minispeaker = "minispeaker:main"
 
