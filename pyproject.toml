@@ -8,7 +8,7 @@ license = "MIT"
 dependencies = [
     "miniaudio>=1.61",
     "numpy>=1.24.4",
-    "typing-extensions>=4" # NOTE: There is no reason for this specific pin other than to reduce transitive dependencies from v3 -> v4
+    "typing-extensions>=4.7.0"
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
