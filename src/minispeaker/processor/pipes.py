@@ -1,3 +1,23 @@
+# Typing
+from __future__ import annotations
+from typing_extensions import Buffer, Generator, Union, Callable, AsyncGenerator, Any
+from numpy import ndarray
+from numpy.typing import ArrayLike, DTypeLike
+from miniaudio import SampleFormat, DitherMode, FramesType
+
+# Helpers
+from asyncio import create_task, Queue
+from minispeaker.asyncsync import Event, poll_async_generator
+
+
+# Main dependencies
+from miniaudio import (
+    decode_file,
+    stream_with_callbacks,
+    PlaybackCallbackGeneratorType,
+)
+import numpy as np
+
 def memory_stream(arr: ndarray) -> PlaybackCallbackGeneratorType:
     """Converts a numpy array into a stream.
 
