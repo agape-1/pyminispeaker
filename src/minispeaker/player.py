@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
-from typing_extensions import Annotated, Dict, Optional, Generator, Literal, AsyncGenerator
+from typing_extensions import Annotated, Dict, Optional, Generator, AsyncGenerator
 from types import AsyncGeneratorType, GeneratorType
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
@@ -18,7 +18,7 @@ from inspect import getgeneratorstate, GEN_CREATED
 # Main dependencies
 from minispeaker.devices import default_speaker
 from minispeaker.tracks import Track
-from minispeaker.processor.pipes import main_audio_processor, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames
+from minispeaker.processor.pipes import main_audio_processor, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
 from miniaudio import (
     Devices,
     PlaybackDevice,
@@ -182,6 +182,8 @@ class Speakers:
         audio = stream_match_audio_channels(audio, self.channels)
         next(audio)
         audio = stream_num_frames(audio)
+        next(audio)
+        audio = stream_pad(audio, self.channels)
         next(audio)
         return audio
 

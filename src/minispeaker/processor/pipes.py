@@ -182,6 +182,35 @@ def stream_bytes_to_array(byte_stream: Generator[Buffer, int, None],
         except StopIteration:
             break
 
+def stream_pad(ndarray_stream: Generator[ndarray, int, None], channels: int) -> Generator[ndarray, int, None]:
+    """When calculating np.average to mix multiple audio streams,
+    the function assumes all audio streams are identical in shape.
+    This is the case until an audio stream is nearing its end, whereby
+    it returns an trimmed audio stream. pad() ensures that the
+    trimmed audio stream is padded.
+
+    Args:
+        sample_stream (Generator[ndarray, int, None]): Any synchronous audio generator whose data is formatted as a numpy array.
+        channels (int): Number of audio channels.
+
+    Yields:
+        Generator[ndarray, int, None]:formatted as a numpy array.
+    """
+    num_frames = yield b""
+    while True:
+        try:
+            audio = ndarray_stream.send(num_frames) 
+            if not (audio.ndim and audio.size):
+                num_frames = yield np.zeros((num_frames, channels))
+            elif audio.shape[0] != num_frames:
+                padded = audio.copy()
+                padded.resize((num_frames, channels))
+                num_frames = yield padded
+            else:
+                num_frames = yield audio
+        except StopIteration:
+            break
+
 def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
         from minispeaker import Speakers
         """
@@ -197,27 +226,6 @@ def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
             Iterator[array]: A audio chunk
         """
         self: Speakers = speaker # TODO: Decouple main audio processor into different generators with more explicit argument passthrough
-        def pad(chunk: ndarray) -> ndarray:
-            """When calculating np.average to mix multiple audio streams,
-            the function assumes all audio streams are identical in shape.
-            This is the case until an audio stream is nearing its end, whereby
-            it returns an trimmed audio stream. pad() ensures that the
-            trimmed audio stream is padded.
-
-            Args:
-                chunk (ndarray): An audio chunk.
-
-            Returns:
-                ndarray: An audio chunk padded to the uniform shape.
-            """
-            if not (chunk.ndim and chunk.size):
-                return np.zeros((num_frames, self.channels))
-            if chunk.shape[0] != num_frames:
-                padded = chunk.copy()
-                padded.resize((num_frames, self.channels))
-                return padded
-            return chunk
-
         num_frames = yield b""
         while not self._quit.is_set() and self.is_playable():
             if not self.paused:
@@ -236,7 +244,6 @@ def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
                             volumes.append(track.volume)
 
                 if chunks and not self.muted and self.volume:
-                    chunks = list(map(pad, chunks))
                     audio = (
                         self.volume * np.average(chunks, axis=0, weights=volumes)
                     ).astype(self._dtype)
