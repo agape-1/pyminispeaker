@@ -2,9 +2,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
-from typing_extensions import Annotated, Dict, List, Optional, Generator, Literal, AsyncGenerator
+from typing_extensions import Annotated, Dict, Optional, Generator, Literal, AsyncGenerator
 from types import AsyncGeneratorType, GeneratorType
-from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
 
@@ -19,7 +18,7 @@ from inspect import getgeneratorstate, GEN_CREATED
 # Main dependencies
 from minispeaker.devices import default_speaker
 from minispeaker.tracks import Track
-from minispeaker.processor.pipes import stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames
+from minispeaker.processor.pipes import main_audio_processor, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames
 from miniaudio import (
     Devices,
     PlaybackDevice,
@@ -148,67 +147,6 @@ class Speakers:
         """
         return len(self.tracks) >= 1
 
-    def _main_audio_processor(self) -> PlaybackCallbackGeneratorType:
-        """
-        Audio processor that merges multiple audio streams together as a single generator.
-        Allows per-application volume.
-
-        Returns:
-            PlaybackCallbackGeneratorType: Generator that supports miniaudio's playback callback
-
-        Yields:
-            Iterator[array]: A audio chunk
-        """
-
-        def pad(chunk: ndarray) -> ndarray:
-            """When calculating np.average to mix multiple audio streams,
-            the function assumes all audio streams are identical in shape.
-            This is the case until an audio stream is nearing its end, whereby
-            it returns an trimmed audio stream. pad() ensures that the
-            trimmed audio stream is padded.
-
-            Args:
-                chunk (ndarray): An audio chunk.
-
-            Returns:
-                ndarray: An audio chunk padded to the uniform shape.
-            """
-            if not (chunk.ndim and chunk.size):
-                return np.zeros((num_frames, self.channels))
-            if chunk.shape[0] != num_frames:
-                padded = chunk.copy()
-                padded.resize((num_frames, self.channels))
-                return padded
-            return chunk
-
-        num_frames = yield b""
-        while not self._quit.is_set() and self.is_playable():
-            if not self.paused:
-                chunks: List[ndarray] = []
-                volumes: List[float] = []
-
-                for track in list(self.tracks.values()):
-                    if not track.paused and track._stream:
-                        try:
-                            chunk = track.chunk(num_frames)
-                        except StopIteration:
-                            continue
-
-                        if not track.muted:
-                            chunks.append(chunk)
-                            volumes.append(track.volume)
-
-                if chunks and not self.muted and self.volume:
-                    chunks = list(map(pad, chunks))
-                    audio = (
-                        self.volume * np.average(chunks, axis=0, weights=volumes)
-                    ).astype(self._dtype)
-                    yield audio
-                else:
-                    yield 0
-        self._playable = False
-        self._finished.set()
-
     def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
         """Processes a variety of different audio formats by converting them to a synchronous generator.
 
@@ -269,7 +207,7 @@ class Speakers:
         track._stream = audio_controller
 
         if not self.processor_running():
-            processor = self._main_audio_processor()
+            processor = main_audio_processor(self)
             next(processor)
             self._playable = True
             self._PlaybackDevice.start(processor)
