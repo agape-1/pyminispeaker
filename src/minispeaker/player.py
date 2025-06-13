@@ -241,7 +241,7 @@ class Speakers:
             next(audio)
         elif isinstance(audio, GeneratorType):
             if getgeneratorstate(audio) == GEN_CREATED:
-                warn(f"mic.py: The audio generator {audio} has not started. Please modify the generator to `yield b"" initially`, or else the first audio chunk will skipped. Skipping...")
+                warn(f"Generator {audio} has not started. Please modify the generator to initially `yield b""`, or else the first audio chunk will skipped. Skipping the first audio chunk...")
                 next(audio)
         audio = stream_bytes_to_array(audio, self._dtype)
         next(audio)
@@ -265,7 +265,7 @@ class Speakers:
         end_signal = track._signal
         set_event_loop(loop)
         if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
-            raise TypeError('speakers.py: audio is not a valid file path, nor is it a generator to stream audio chunks')
+            raise TypeError(f"{audio} is not a string or a generator")
         audio = self._unify_audio_types(audio, loop, track)
         audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name, end_signal))
         next(audio_controller)
