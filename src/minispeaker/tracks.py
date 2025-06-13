@@ -63,7 +63,7 @@ class Track:
     def wait(self):
         if not isinstance(self._signal, Event):
             raise TypeError(
-                f"speakers.py: {self} does not have an correct signal event instance."
+                f"{self} is not a valid signal event instance."
             )
         return self._signal.wait()
 
@@ -75,7 +75,7 @@ class Track:
         """
         if self._stream is None:
             raise ValueError(
-                f"speakers.py {self} does not have a audio stream instance."
+                f"{self} does not have a audio stream instance."
             )
 
     def chunk(self, num_frames: int) -> ndarray:
