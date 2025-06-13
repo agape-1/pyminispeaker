@@ -14,7 +14,7 @@ from numpy import asarray
 
 
 @dataclass
-class Song:
+class Track:
     """
     Class that holds auxiliary information on a audio piece being played.
     """
@@ -29,7 +29,7 @@ class Song:
     _signal: InitVar[
         Annotated[
             Optional[Event],
-            "The internal Event() used to alert when a song has finished.",
+            "The internal Event() used to alert when a track has finished.",
         ]
     ] = None
     _stream: InitVar[
@@ -49,19 +49,19 @@ class Song:
             self._stream = _stream
 
     def pause(self):
-        """Pauses the song. Does nothing if the song is already paused."""
+        """Pauses the track. Does nothing if the track is already paused."""
         self.paused = True
 
     def cont(self):
-        """Unpauses the song. Does nothing if the song is already playing."""
+        """Unpauses the track. Does nothing if the track is already playing."""
         self.paused = False
 
     def mute(self):
-        """Mutes the song. The audio will still be playing but it won't be heard. Does nothing if the song is already muted."""
+        """Mutes the track. The audio will still be playing but it won't be heard. Does nothing if the track is already muted."""
         self.muted = True
 
     def unmute(self):
-        """Unmutes the song. Does nothing if the song is not muted."""
+        """Unmutes the track. Does nothing if the track is not muted."""
         self.muted = False
 
     def wait(self):
@@ -72,7 +72,7 @@ class Song:
         return self._signal.wait()
 
     def assert_stream(self):
-        """Ensures the Song has an available stream.
+        """Ensures the Track has an available stream.
 
         Raises:
             ValueError: Underlying audio stream does not exist.

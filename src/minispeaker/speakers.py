@@ -18,7 +18,7 @@ from inspect import getgeneratorstate, GEN_CREATED
 
 # Main dependencies
 from minispeaker.devices import default_speaker
-from minispeaker.tracks import Song
+from minispeaker.tracks import Track
 from minispeaker.processor.pipes import stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames
 from miniaudio import (
     Devices,
@@ -64,7 +64,7 @@ class Speakers:
         )
         self.set_internal_volume(1.0)
         self._quit = Event()
-        self.songs: Dict[str, Song] = dict()
+        self.tracks: Dict[str, Track] = dict()
         self._finished = Event()
         self._playable = False
         self.paused = False
@@ -124,19 +124,19 @@ class Speakers:
         """Unmutes the speaker. Does nothing if the speaker is not muted."""
         self.muted = False
 
-    def _handle_audio_end(self, name: str, song_end: Event):
+    def _handle_audio_end(self, name: str, track_end: Event):
         """Tells anyone running Speakers().wait() to stop waiting on end of audio.
 
         Args:
-            name (str): Name of the Song.
-            song_end (Event): Anyone running wait() on song_end Event.
+            name (str): Name of the Track.
+            track_end (Event): Anyone running wait() on track_end Event.
         """
 
-        def alert_and_remove_song():
-            del self.songs[name]
-            song_end.set()
+        def alert_and_remove_track():
+            del self.tracks[name]
+            track_end.set()
 
-        return alert_and_remove_song
+        return alert_and_remove_track
 
     def processor_running(self) -> bool:
         """
@@ -148,9 +148,9 @@ class Speakers:
     def is_playable(self) -> bool:
         """
         Returns:
-            bool: Does the speaker have any songs ready to be played?  
+            bool: Does the speaker have any tracks ready to be played?  
         """
-        return len(self.songs) >= 1
+        return len(self.tracks) >= 1
 
     def _main_audio_processor(self) -> PlaybackCallbackGeneratorType:
         """
@@ -191,16 +191,16 @@ class Speakers:
                 chunks: List[ndarray] = []
                 volumes: List[float] = []
 
-                for song in list(self.songs.values()):
-                    if not song.paused and song._stream:
+                for track in list(self.tracks.values()):
+                    if not track.paused and track._stream:
                         try:
-                            chunk = song.chunk(num_frames)
+                            chunk = track.chunk(num_frames)
                         except StopIteration:
                             continue
 
-                        if not song.muted:
+                        if not track.muted:
                             chunks.append(chunk)
-                            volumes.append(song.volume)
+                            volumes.append(track.volume)
 
                 if chunks and not self.muted and self.volume:
                     chunks = list(map(pad, chunks))
@@ -213,13 +213,13 @@ class Speakers:
         self._playable = False
         self._finished.set()
 
-    def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, song: Song) -> PlaybackCallbackGeneratorType:
+    def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
         """Processes a variety of different audio formats by converting them to a synchronous generator.
 
         Args:
             audio (str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int]): Audio stream or audio file path.
             loop (AbstractEventLoop): Any loop.
-            song (Song): The corresponding song of `audio`.
+            track (Track): The corresponding track of `audio`.
 
         Returns:
             PlaybackCallbackGeneratorType: A miniaudio compatible generator.
@@ -261,16 +261,16 @@ class Speakers:
         Raises:
             TypeError: The audio input is not valid and must be a correct file path.
         """
-        song = self.songs[name]
-        end_signal = song._signal
+        track = self.tracks[name]
+        end_signal = track._signal
         set_event_loop(loop)
         if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
             raise TypeError('speakers.py: audio is not a valid file path, nor is it a generator to stream audio chunks')
-        audio = self._unify_audio_types(audio, loop, song)
+        audio = self._unify_audio_types(audio, loop, track)
         audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name, end_signal))
         next(audio_controller)
 
-        song._stream = audio_controller
+        track._stream = audio_controller
 
         if not self.processor_running():
             processor = self._main_audio_processor()
@@ -285,7 +285,7 @@ class Speakers:
         self,
         audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int],
         name: Annotated[Optional[str], "Custom name for the audio."] = None,
-        volume: Annotated[Optional[float], "The initial song volume."] = None,
+        volume: Annotated[Optional[float], "The initial track volume."] = None,
         paused: Annotated[Optional[bool], "Should the audio not play immediately?"] = False,
         muted: Annotated[Optional[bool], "Should the audio be muted immediately?"] = False,
         realtime: Annotated[Optional[bool], "Should the audio(if asynchronous) be played in realtime?"] = False
@@ -294,22 +294,22 @@ class Speakers:
 
         Usage:
             speaker = Speakers(name="My device speakers")
-            speaker.play("song.mp3")
-            speaker.wait() # Wait until song is finished
+            speaker.play("track.mp3")
+            speaker.wait() # Wait until track is finished
             speaker.stop()
 
             or
 
             with Speaker(name="My device speakers") as speaker:
-                speaker.play("song.mp3", 'special name')
-                speaker.play("test.mp3") # Both song.mp3 and test.mp3 are playing
-                speaker['special name'].wait() # Wait until 'special name', or 'song.mp3' is finished. 'test.mp3' might still be playing.
-                speaker.wait() # Wait until all the songs are finished
+                speaker.play("track.mp3", 'special name')
+                speaker.play("test.mp3") # Both track.mp3 and test.mp3 are playing
+                speaker['special name'].wait() # Wait until 'special name', or 'track.mp3' is finished. 'test.mp3' might still be playing.
+                speaker.wait() # Wait until all the tracks are finished
 
         Args:
             audio (str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int]): Audio file path or audio stream. The audio stream must be pre-initialized via next() and yield audio chunks as some form of an array. If you send() a number into the generator rather than just using next() on it, you'll get that given number of frames, instead of the default configured amount. See memory_stream() for an example.
             name (str): A custom name which will be accessible by self[name]. Defaults to `audio`.
-            volume (float): The individual Song's volume. Defaults to `self.volume`.
+            volume (float): The individual Track's volume. Defaults to `self.volume`.
             paused (bool): Should the audio be immediately paused before playback? Defaults to `False`.
             muted (bool): Should the audio be immediately muted before playback? Defaults to `False`.
             realtime (bool): Should the audio(if asynchronous) be played in realtime? Defaults to `False`.
@@ -322,10 +322,10 @@ class Speakers:
 
         self._finished.clear()
 
-        song = Song(
+        track = Track(
             name=name, paused=paused, muted=muted, volume=volume, realtime=realtime, _signal=Event()
         )
-        self.songs[name] = song
+        self.tracks[name] = track
 
         play_background = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
         play_background.start()
@@ -342,17 +342,17 @@ class Speakers:
         return self._finished.wait()
 
     def clear(self):
-        """Removes all current songs.
+        """Removes all current tracks.
         """
-        self.songs.clear()
+        self.tracks.clear()
 
     def __getitem__(self, key: str):
-        """Helper to allow access to an individual Song via self['song']."""
-        return self.songs[key]
+        """Helper to allow access to an individual Track via self['track']."""
+        return self.tracks[key]
 
     def __delitem__(self, key: str):
-        """Helper to quickly remove an individual Song via del self['song']."""
-        del self.songs[key]
+        """Helper to quickly remove an individual Track via del self['track']."""
+        del self.tracks[key]
 
     def __enter__(self):
         return self
