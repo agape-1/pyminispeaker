@@ -46,11 +46,7 @@ class Speakers:
 
     name: Optional[str] = field(default_factory=default_speaker)
     sample_rate: int = 44100
-    sample_format: Literal[SampleFormat.UNSIGNED8,
-            SampleFormat.SIGNED16,
-            SampleFormat.SIGNED24,
-            SampleFormat.SIGNED32,
-            SampleFormat.FLOAT32] = SampleFormat.SIGNED16
+    sample_format: SampleFormat = SampleFormat.SIGNED16
     channels: int = 2
     buffer_size: int = 128
     volume: float = 1.0
