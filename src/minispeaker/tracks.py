@@ -9,10 +9,6 @@ from minispeaker.asyncsync import Event
 # Main dependencies
 from numpy import asarray
 
-
-
-
-
 @dataclass
 class Track:
     """
