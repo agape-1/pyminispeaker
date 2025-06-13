@@ -12,7 +12,7 @@ from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
 from warnings import warn
 from threading import Thread
 from asyncio import get_event_loop, set_event_loop
-from minispeaker.utils.miniaudios import sampleformat_to_dtype
+from minispeaker.processor.convert import sampleformat_to_dtype
 from minispeaker.asyncsync import Event, poll_async_generator
 from numpy import asarray
 from inspect import getgeneratorstate, GEN_CREATED
