@@ -1,6 +1,6 @@
 # Typing
 from __future__ import annotations
-from dataclasses import dataclass, InitVar, field
+from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
 from typing_extensions import Annotated, Dict, List, Optional, Generator, Literal, AsyncGenerator
 from types import AsyncGeneratorType, GeneratorType
@@ -14,11 +14,11 @@ from threading import Thread
 from asyncio import get_event_loop, set_event_loop
 from minispeaker.processor.convert import sampleformat_to_dtype
 from minispeaker.asyncsync import Event, poll_async_generator
-from numpy import asarray
 from inspect import getgeneratorstate, GEN_CREATED
 
 # Main dependencies
 from minispeaker.devices import default_speaker
+from minispeaker.tracks import Song
 from minispeaker.processor.pipes import stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames
 from miniaudio import (
     Devices,
@@ -26,91 +26,6 @@ from miniaudio import (
     stream_with_callbacks
 )
 import numpy as np
-
-
-@dataclass
-class Song:
-    """
-    Class that holds auxiliary information on a audio piece being played.
-    """
-
-    name: str
-    paused: bool
-    muted: bool
-    volume: float
-    realtime: bool
-
-    # InitVar is used here to hide the internal fields.
-    _signal: InitVar[
-        Annotated[
-            Optional[Event],
-            "The internal Event() used to alert when a song has finished.",
-        ]
-    ] = None
-    _stream: InitVar[
-        Annotated[
-            Optional[PlaybackCallbackGeneratorType],
-            "The internal audio stream used to obtain the latest audio chunk.",
-        ]
-    ] = None
-
-    def __post_init__(
-        self, _signal: Event | None, _stream: PlaybackCallbackGeneratorType | None
-    ):
-        """Automatically assigns the internal private fields."""
-        if _signal:
-            self._signal = _signal
-        if _stream:
-            self._stream = _stream
-
-    def pause(self):
-        """Pauses the song. Does nothing if the song is already paused."""
-        self.paused = True
-
-    def cont(self):
-        """Unpauses the song. Does nothing if the song is already playing."""
-        self.paused = False
-
-    def mute(self):
-        """Mutes the song. The audio will still be playing but it won't be heard. Does nothing if the song is already muted."""
-        self.muted = True
-
-    def unmute(self):
-        """Unmutes the song. Does nothing if the song is not muted."""
-        self.muted = False
-
-    def wait(self):
-        if not isinstance(self._signal, Event):
-            raise TypeError(
-                f"speakers.py: {self} does not have an correct signal event instance."
-            )
-        return self._signal.wait()
-
-    def assert_stream(self):
-        """Ensures the Song has an available stream.
-
-        Raises:
-            ValueError: Underlying audio stream does not exist.
-        """
-        if self._stream is None:
-            raise ValueError(
-                f"speakers.py {self} does not have a audio stream instance."
-            )
-
-    def chunk(self, num_frames: int) -> ndarray:
-        """Retrieves the latest audio chunk.
-
-        Args:
-            num_frames (int): The number of frames per chunk.
-
-        Raises:
-            ValueError: Underlying audio stream does not exist.
-
-        Returns:
-            ndarray: A audio chunk represented as a numpy array.
-        """
-        self.assert_stream()
-        return asarray(self._stream.send(num_frames))
 
 @dataclass
 class Speakers:
