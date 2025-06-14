@@ -61,7 +61,6 @@ class Speakers:
         self._quit = Event()
         self.tracks: Dict[str, Track] = dict()
         self._finished = Event()
-        self._playable = False
         self.paused = False
         self.muted = False
 
@@ -122,7 +121,7 @@ class Speakers:
     def _handle_audio_end(self, name: str, track_end: Event):
         """Tells anyone running Speakers().wait() to stop waiting on end of audio.
 
-        Args:
+        Args:z
             name (str): Name of the Track.
             track_end (Event): Anyone running wait() on track_end Event.
         """
@@ -132,18 +131,6 @@ class Speakers:
             track_end.set()
 
         return alert_and_remove_track
-
-    @property
-    def processor(self):
-        return self._processor
-
-    def processor_running(self) -> bool:
-        """
-        Returns:
-            bool: Is the main audio processor running?
-        """
-        return self._playable
-
 
     def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
         """Processes a variety of different audio formats by converting them to a synchronous generator.

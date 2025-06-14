@@ -267,5 +267,4 @@ def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
                     yield audio
                 else:
                     yield 0
-        self._playable = False
         self._finished.set()
