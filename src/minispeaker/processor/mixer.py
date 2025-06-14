@@ -1,42 +1,56 @@
 # Typing
-from typing_extensions import List
+from typing_extensions import List, Callable, Dict
+from minispeaker.tracks import Track
+from minispeaker.asyncsync import Event
+from numpy.typing import DTypeLike
 from numpy import ndarray
 from miniaudio import PlaybackCallbackGeneratorType
 
 # Main dependencies
 import numpy as np
 
-def master_mixer(speaker) -> PlaybackCallbackGeneratorType:
-    from minispeaker.player import Speakers
-    """
-    Audio processor that merges multiple audio streams together as a single generator, with master speaker mute, pause, and volume support.
+def master_mixer(
+    tracks: Dict[str, Track],
+    closed: Event,
+    paused: Callable[[], bool],
+    muted: Callable[[], bool],
+    volume: Callable[[], float],
+    dtype: DTypeLike,
+    exited: Event
+) -> PlaybackCallbackGeneratorType: # TODO: Reduce `closed` Event and `exited` Event to single event.
+    """Audio processor that merges multiple audio stream with master controls.
 
     Args:
-        speaker (Speaker): 
-    Returns:
-        PlaybackCallbackGeneratorType: Generator that supports miniaudio's playback callback
+        tracks (Dict[str, Track]): Multiple audio streams represented as a dictionary of `Track`s.
+        closed (Event): To signal when `Speaker` is closed.
+        paused (Callable[[], bool]): When `paused` is evaluated to `True`, no audio streams will continue.
+        muted (Callable[[], bool]): MWhen `muted` is evaluted to `True`, all audio streams will continue but will play no sound.
+        volume (Callable[[], float]): Master volume.
+        dtype (DTypeLike): SampleFormat equivalent of the underlying audio streams.
+        exited (Event): To signal when `master_mixer` is finished.
 
     Yields:
-        Iterator[array]: A audio chunk
+        Iterator[PlaybackCallbackGeneratorType]: Miniaudio compatiable audio stream generator
     """
-    self: Speakers = speaker # TODO: Decouple main audio processor into different generators with more explicit argument passthrough
     num_frames = yield b""
-    while not self._quit.is_set():
-        if not self.paused:
+    
+    while not closed.is_set():
+        if not paused():
             chunks: List[ndarray] = []
             volumes: List[float] = []
-            for track in list(self.tracks.values()):
+
+            for track in list(tracks.values()):
                 if not track.paused and track._stream:
                     try:
                         chunks.append(track.chunk(num_frames))
                         volumes.append(track.volume)
                     except StopIteration:
                         continue
-            if chunks and not self.muted and self.volume:
+            if chunks and not muted():
                 audio = (
-                    self.volume * np.average(chunks, axis=0, weights=volumes)
-                ).astype(self._dtype)
+                    volume() * np.average(chunks, axis=0, weights=volumes)
+                ).astype(dtype)
                 yield audio
             else:
                 yield 0
-    self._finished.set()
+    exited.set()

@@ -197,7 +197,13 @@ class Speakers:
         track._stream = audio_controller
 
         if not self._PlaybackDevice.running:
-            mixer = master_mixer(self)
+            mixer = master_mixer(tracks=self.tracks, 
+                                 closed=self._quit, 
+                                 paused=lambda: self.paused, 
+                                 muted= lambda: self.muted,
+                                 volume=lambda: self.volume,
+                                 dtype=self._dtype,
+                                 exited=self._finished)
             next(mixer)
             self._PlaybackDevice.start(mixer)
 
