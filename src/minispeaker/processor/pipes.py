@@ -1,6 +1,6 @@
 # Typing
 from __future__ import annotations
-from typing_extensions import List, Buffer, Generator, Union, Callable, AsyncGenerator, Any
+from typing_extensions import Buffer, Generator, Union, Callable, AsyncGenerator, Any
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, DitherMode, FramesType
@@ -232,39 +232,3 @@ def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Tr
                 num_frames = yield audio
         except StopIteration:
             break 
-
-def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
-        from minispeaker import Speakers
-        """
-        Audio processor that merges multiple audio streams together as a single generator.
-        Allows per-application volume.
-
-        Args:
-            speaker (Speaker): 
-        Returns:
-            PlaybackCallbackGeneratorType: Generator that supports miniaudio's playback callback
-
-        Yields:
-            Iterator[array]: A audio chunk
-        """
-        self: Speakers = speaker # TODO: Decouple main audio processor into different generators with more explicit argument passthrough
-        num_frames = yield b""
-        while not self._quit.is_set():
-            if not self.paused:
-                chunks: List[ndarray] = []
-                volumes: List[float] = []
-                for track in list(self.tracks.values()):
-                    if not track.paused and track._stream:
-                        try:
-                            chunks.append(track.chunk(num_frames))
-                            volumes.append(track.volume)
-                        except StopIteration:
-                            continue
-                if chunks and not self.muted and self.volume:
-                    audio = (
-                        self.volume * np.average(chunks, axis=0, weights=volumes)
-                    ).astype(self._dtype)
-                    yield audio
-                else:
-                    yield 0
-        self._finished.set()
