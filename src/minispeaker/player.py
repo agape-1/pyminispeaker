@@ -133,6 +133,10 @@ class Speakers:
 
         return alert_and_remove_track
 
+    @property
+    def processor(self):
+        return self._processor
+
     def processor_running(self) -> bool:
         """
         Returns:
@@ -204,11 +208,10 @@ class Speakers:
 
         track._stream = audio_controller
 
-        if not self.processor_running():
-            processor = main_audio_processor(self)
-            next(processor)
-            self._playable = True
-            self._PlaybackDevice.start(processor)
+        if not self._PlaybackDevice.running:
+            mixer = main_audio_processor(self)
+            next(mixer)
+            self._PlaybackDevice.start(mixer)
 
         self._quit.clear()
         self._quit.tevent.wait() # This function is intended to be run as a separate thread, requiring tevent <--> threading.Event()
