@@ -9,6 +9,7 @@ from miniaudio import PlaybackCallbackGeneratorType
 # Main dependencies
 import numpy as np
 
+# `master_mixer` was written with explicit parameter support via Claude Onus 4
 def master_mixer(
     tracks: Dict[str, Track],
     closed: Event,
