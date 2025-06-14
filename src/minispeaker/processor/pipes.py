@@ -10,6 +10,7 @@ from asyncio import create_task, Queue
 from minispeaker.asyncsync import Event, poll_async_generator
 
 # Main dependencies
+from minispeaker.tracks import Track
 from miniaudio import (
     decode_file,
     stream_with_callbacks,
@@ -211,6 +212,27 @@ def stream_pad(ndarray_stream: Generator[ndarray, int, None], channels: int) -> 
         except StopIteration:
             break
 
+def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Track) -> Generator[ArrayLike, int, None]:
+    """Convenience generator function to purposely throw out audio data if `track` is muted, creating the effect of played but unheard audio.
+
+    Args:
+        sample_stream (Generator[ArrayLike, int, None]): Any synchronous audio generator
+        track (Track): Any `Track` class.
+
+    Yields:
+        Generator[ArrayLike, int, None]: Audio data
+    """
+    num_frames = yield b""
+    while True:
+        try:
+            audio = sample_stream.send(num_frames) 
+            if track.muted:
+                num_frames = yield np.zeros(np.shape(audio)) # NOTE: This is faster than `np.zeros_like(x)`, verify this by modifying the question `timeit` script and testing it agaisnt `np.zeroes(np.shape(audio))` from https://stackoverflow.com/questions/27464039/why-the-performance-difference-between-numpy-zeros-and-numpy-zeros-like
+            else:
+                num_frames = yield audio
+        except StopIteration:
+            break 
+
 def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
         from minispeaker import Speakers
         """
@@ -231,18 +253,13 @@ def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
             if not self.paused:
                 chunks: List[ndarray] = []
                 volumes: List[float] = []
-
                 for track in list(self.tracks.values()):
                     if not track.paused and track._stream:
                         try:
-                            chunk = track.chunk(num_frames)
+                            chunks.append(track.chunk(num_frames))
+                            volumes.append(track.volume)
                         except StopIteration:
                             continue
-
-                        if not track.muted:
-                            chunks.append(chunk)
-                            volumes.append(track.volume)
-
                 if chunks and not self.muted and self.volume:
                     audio = (
                         self.volume * np.average(chunks, axis=0, weights=volumes)

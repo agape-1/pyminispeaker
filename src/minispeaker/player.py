@@ -18,7 +18,7 @@ from inspect import getgeneratorstate, GEN_CREATED
 # Main dependencies
 from minispeaker.devices import default_speaker
 from minispeaker.tracks import Track
-from minispeaker.processor.pipes import main_audio_processor, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
+from minispeaker.processor.pipes import main_audio_processor, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
 from miniaudio import (
     Devices,
     PlaybackDevice,
@@ -184,6 +184,8 @@ class Speakers:
         audio = stream_num_frames(audio)
         next(audio)
         audio = stream_pad(audio, self.channels)
+        next(audio)
+        audio = stream_handle_mute(audio, track)
         next(audio)
         return audio
 
