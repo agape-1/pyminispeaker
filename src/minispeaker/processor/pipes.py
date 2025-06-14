@@ -249,7 +249,7 @@ def main_audio_processor(speaker) -> PlaybackCallbackGeneratorType:
         """
         self: Speakers = speaker # TODO: Decouple main audio processor into different generators with more explicit argument passthrough
         num_frames = yield b""
-        while not self._quit.is_set() and self.is_playable():
+        while not self._quit.is_set():
             if not self.paused:
                 chunks: List[ndarray] = []
                 volumes: List[float] = []

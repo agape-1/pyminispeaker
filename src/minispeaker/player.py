@@ -140,12 +140,6 @@ class Speakers:
         """
         return self._playable
 
-    def is_playable(self) -> bool:
-        """
-        Returns:
-            bool: Does the speaker have any tracks ready to be played?  
-        """
-        return len(self.tracks) >= 1
 
     def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
         """Processes a variety of different audio formats by converting them to a synchronous generator.
