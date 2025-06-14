@@ -47,11 +47,11 @@ def master_mixer(
                         volumes.append(track.volume)
                     except StopIteration:
                         continue
-            if chunks and not muted():
+            if muted() or not chunks:
+                yield 0
+            else:
                 audio = (
                     volume() * np.average(chunks, axis=0, weights=volumes)
                 ).astype(dtype)
                 yield audio
-            else:
-                yield 0
     exited.set()
