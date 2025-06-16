@@ -24,13 +24,13 @@ class Track:
     # InitVar is used here to hide the internal fields.
     _signal: InitVar[
         Annotated[
-            Optional[Event],
+            Event,
             "The internal Event() used to alert when a track has finished.",
         ]
     ] = None
     _stream: InitVar[
         Annotated[
-            Optional[PlaybackCallbackGeneratorType],
+            PlaybackCallbackGeneratorType,
             "The internal audio stream used to obtain the latest audio chunk.",
         ]
     ] = None
@@ -39,10 +39,8 @@ class Track:
         self, _signal: Event | None, _stream: PlaybackCallbackGeneratorType | None
     ):
         """Automatically assigns the internal private fields."""
-        if _signal:
-            self._signal = _signal
-        if _stream:
-            self._stream = _stream
+        self._signal = _signal
+        self._stream = _stream
 
     def pause(self):
         """Pauses the track. Does nothing if the track is already paused."""
@@ -61,27 +59,12 @@ class Track:
         self.muted = False
 
     def wait(self):
-        if not isinstance(self._signal, Event):
-            raise TypeError(
-                f"{self} is not a valid signal event instance."
-            )
         return self._signal.wait()
-
-    def assert_stream(self):
-        """Ensures the Track has an available stream.
-
-        Raises:
-            ValueError: Underlying audio stream does not exist.
-        """
-        if self._stream is None:
-            raise ValueError(
-                f"{self} does not have a audio stream instance."
-            )
 
     def chunk(self, num_frames: int) -> ndarray:
         """Retrieves the latest audio chunk.
 
-        Args:
+        Arg
             num_frames (int): The number of frames per chunk.
 
         Raises:
@@ -90,5 +73,4 @@ class Track:
         Returns:
             ndarray: A audio chunk represented as a numpy array.
         """
-        self.assert_stream()
         return asarray(self._stream.send(num_frames))

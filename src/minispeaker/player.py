@@ -19,7 +19,7 @@ from inspect import getgeneratorstate, GEN_CREATED
 from minispeaker.devices import default_speaker
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
-from minispeaker.processor.pipes import stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
+from minispeaker.processor.pipes import stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
 from miniaudio import (
     Devices,
     PlaybackDevice,
@@ -252,7 +252,7 @@ class Speakers:
         self._finished.clear()
 
         track = Track(
-            name=name, paused=paused, muted=muted, volume=volume, realtime=realtime, _signal=Event()
+            name=name, paused=paused, muted=muted, volume=volume, realtime=realtime, _signal=Event(), _stream=stream_sentinel()
         )
         self.tracks[name] = track
 
