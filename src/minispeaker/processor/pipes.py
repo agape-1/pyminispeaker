@@ -183,6 +183,20 @@ def stream_bytes_to_array(byte_stream: Generator[Buffer, int, None],
         except StopIteration:
             break
 
+def stream_sentinel() -> Generator[ArrayLike, int, None]:
+    """Convenience generator function to simply yield nothing. Typically used agaisnt race conditions when track audio data is requested
+    before the complete audio stream generator is initialized.
+
+    Yields:
+        Generator[ArrayLike, int, None]: Empty audio data
+    """
+    num_frames = yield b""
+    while True:
+        try:
+            num_frames = yield np.zeros((num_frames, 1))
+        except StopIteration:
+            break
+
 def stream_pad(ndarray_stream: Generator[ndarray, int, None], channels: int) -> Generator[ndarray, int, None]:
     """When calculating np.average to mix multiple audio streams,
     the function assumes all audio streams are identical in shape.
