@@ -17,7 +17,7 @@ def master_mixer(
     muted: Callable[[], bool],
     volume: Callable[[], float],
     dtype: DTypeLike,
-) -> PlaybackCallbackGeneratorType: # TODO: Reduce `closed` Event and `exited` Event to single event.
+) -> PlaybackCallbackGeneratorType:
     """Audio processor that merges multiple audio stream with master controls.
 
     Args:
