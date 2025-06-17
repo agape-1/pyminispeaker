@@ -30,7 +30,7 @@ def sampleformat_to_dtype(
         and sample_format == SampleFormat.SIGNED24
     ):
         warn(
-            f"miniaudios.py: Numpy arrays does not diretly support the format {SampleFormat.SIGNED24}. Returning {convert[sample_format]}..."
+            f"Numpy arrays does not directly support the format {SampleFormat.SIGNED24}. Returning {convert[sample_format]}..."
         )
     return convert[sample_format]
 
