@@ -129,6 +129,8 @@ class Speakers:
         def alert_and_remove_track():
             del self.tracks[name]
             track_end.set()
+            if not self.tracks:
+                self._running.set() # TODO: Figure out how to handle `_PlaybackDevice` start and close
 
         return alert_and_remove_track
 
