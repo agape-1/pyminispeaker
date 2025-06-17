@@ -39,7 +39,7 @@ def master_mixer(
             volumes: List[float] = []
 
             for track in list(tracks.values()):
-                if not track.paused and track._stream:
+                if not track.paused:
                     try:
                         chunks.append(track.chunk(num_frames))
                         volumes.append(track.volume)
