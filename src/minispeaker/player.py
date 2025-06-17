@@ -181,14 +181,10 @@ class Speakers:
             loop: (AbstractEventLoop): Any loop used to process asynchronous audio.
             audio (str | Generator[ArrayLike, int, None]): Audio stream or audio file path passed through from self.play()
             name (str): A custom name which will be accessible by self[name].
-        Raises:
-            TypeError: The audio input is not valid and must be a correct file path.
         """
         track = self.tracks[name]
         end_signal = track._signal
         set_event_loop(loop)
-        if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
-            raise TypeError(f"{audio} is not a string or a generator")
         audio = self._unify_audio_types(audio, loop, track)
         audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name, end_signal))
         next(audio_controller)
@@ -237,7 +233,13 @@ class Speakers:
             paused (bool): Should the audio be immediately paused before playback? Defaults to `False`.
             muted (bool): Should the audio be immediately muted before playback? Defaults to `False`.
             realtime (bool): Should the audio(if asynchronous) be played in realtime? Defaults to `False`.
+        Raises:
+            TypeError: The audio input is not valid and must be a correct file path.
         """
+
+        if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
+            raise TypeError(f"{audio} is not a string or a generator")
+
         if name is None:
             name = audio
 
