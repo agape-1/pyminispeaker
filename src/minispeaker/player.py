@@ -59,9 +59,8 @@ class Speakers:
             device_id=self._speaker_name_to_id(self.name),
         )
         self.set_internal_volume(1.0)
-        self._quit = Event()
         self.tracks: Dict[str, Track] = dict()
-        self._finished = Event()
+        self._running = Event()
         self.paused = False
         self.muted = False
 
@@ -197,18 +196,14 @@ class Speakers:
         track._stream = audio_controller
 
         if not self._PlaybackDevice.running:
-            mixer = master_mixer(tracks=self.tracks, 
-                                 closed=self._quit, 
+            mixer = master_mixer(tracks=self.tracks,
                                  paused=lambda: self.paused, 
                                  muted= lambda: self.muted,
                                  volume=lambda: self.volume,
                                  dtype=self._dtype,
-                                 exited=self._finished)
+                                 running=self._running)
             next(mixer)
             self._PlaybackDevice.start(mixer)
-
-        self._quit.clear()
-        self._quit.tevent.wait() # This function is intended to be run as a separate thread, requiring tevent <--> threading.Event()
 
     def play(
         self,
@@ -249,7 +244,7 @@ class Speakers:
         if volume is None:
             volume = self.volume
 
-        self._finished.clear()
+        self._running.clear()
 
         track = Track(
             name=name, paused=paused, muted=muted, volume=volume, realtime=realtime, _signal=Event(), _stream=stream_sentinel()
@@ -261,14 +256,14 @@ class Speakers:
 
     def exit(self):
         """Close the speaker. After Speakers().exit() is called, any calls to play with this Speaker object will be undefined behavior."""
+        self._running.set()
         self._PlaybackDevice.stop()
-        self._quit.set()
 
     def wait(self):
         """By default, playing will run in the background while other code is executed.
         Call this function to wait for the speaker to finish playing before moving to the next part of the code.
         """
-        return self._finished.wait()
+        return self._running.wait()
 
     def clear(self):
         """Removes all current tracks.

@@ -12,30 +12,28 @@ import numpy as np
 # `master_mixer` was written with explicit parameter support via Claude Onus 4 and modified+tested for correctness
 def master_mixer(
     tracks: Dict[str, Track],
-    closed: Event,
+    running: Event,
     paused: Callable[[], bool],
     muted: Callable[[], bool],
     volume: Callable[[], float],
     dtype: DTypeLike,
-    exited: Event
 ) -> PlaybackCallbackGeneratorType: # TODO: Reduce `closed` Event and `exited` Event to single event.
     """Audio processor that merges multiple audio stream with master controls.
 
     Args:
         tracks (Dict[str, Track]): Multiple audio streams represented as a dictionary of `Track`s.
-        closed (Event): To signal when `Speaker` is closed.
+        running (Event): When `master_mixer` should end.
         paused (Callable[[], bool]): When `paused` is evaluated to `True`, no audio streams will continue.
-        muted (Callable[[], bool]): MWhen `muted` is evaluted to `True`, all audio streams will continue but will play no sound.
+        muted (Callable[[], bool]): When `muted` is evaluted to `True`, all audio streams will continue but will play no sound.
         volume (Callable[[], float]): Master volume.
         dtype (DTypeLike): SampleFormat equivalent of the underlying audio streams.
-        exited (Event): To signal when `master_mixer` is finished.
 
     Yields:
         Iterator[PlaybackCallbackGeneratorType]: Miniaudio compatiable audio stream generator
     """
     num_frames = yield b""
     
-    while not closed.is_set():
+    while not running.is_set():
         if not paused():
             chunks: List[ndarray] = []
             volumes: List[float] = []
@@ -54,4 +52,3 @@ def master_mixer(
                     volume() * np.average(chunks, axis=0, weights=volumes)
                 ).astype(dtype)
                 yield audio
-    exited.set()
