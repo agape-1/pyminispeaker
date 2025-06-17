@@ -40,8 +40,11 @@ def dtype_to_sampleformat(dtype: Union[None, uint8, int16, int32, float32]) -> S
     Args:
         dtype (Union[None, uint8, int16, int32, float32]): Numpy dtype of the audio sample.
 
+    Raises:
+        ValueError: When a inconvertible dtype is given
+
     Returns:
-        Union[SampleFormat.UNKNOWN, SampleFormat.UNSIGNED8, SampleFormat.SIGNED16, SampleFormat.SIGNED24, SampleFormat.SIGNED32, SampleFormat.FLOAT32]: Corresponding miniaudio `SampleFormat`.
+        SampleFormat: Corresponding miniaudio `SampleFormat`.
     """
     convert = {
         None: SampleFormat.UNKNOWN,
@@ -50,4 +53,6 @@ def dtype_to_sampleformat(dtype: Union[None, uint8, int16, int32, float32]) -> S
         int32: SampleFormat.SIGNED32,
         float32: SampleFormat.FLOAT32,
     }
+    if dtype not in convert:
+        raise ValueError(f"No known {SampleFormat} is supported for {dtype}. The supported dtypes are {list(convert.keys())}")
     return convert[dtype]
