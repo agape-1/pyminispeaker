@@ -341,7 +341,7 @@ class AudioPipeline: # NOTE: All of AudioPipeline has been AI-generated and test
         Apply the pipeline to a source.
 
         Executes all transformations in order, passing the output of each
-        transformation as input to the next. Any generators not yet started will have its first
+        transformation as input to the next. Each generator will be `GEN_STARTED` by having their first
         yield consumed before processing begins.
 
         Args:
