@@ -256,7 +256,7 @@ Args: TypeAlias = Tuple[Any, ...]
 Kwargs: TypeAlias = Dict[str, Any]
 Transform: TypeAlias = Tuple[GeneratorFactory, Args, Kwargs]
 
-class AudioPipeline: # NOTE: All of AudioPipeline has been AI-generated and tested + verified for correctness
+class AudioPipeline: # NOTE: All of AudioPipeline have been AI-generated and tested + verified for correctness
 
     def __init__(self, *transforms: Transform):
         """
