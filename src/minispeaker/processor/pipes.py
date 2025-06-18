@@ -256,51 +256,48 @@ Kwargs: TypeAlias = Dict[str, Any]
 Transform: TypeAlias = Tuple[GeneratorFactory, Args, Kwargs]
 
 class AudioPipeline: # NOTE: All of AudioPipeline has been AI-generated and tested + verified for correctness
-    """
-    Immutable pipeline that preserves order and chains audio processing transformations.
-
-    Creates a composable pipeline of generator transformations that can be applied to any source.
-    Each transformation in the pipeline receives the output of the previous transformation,
-    creating a lazy evaluation chain that processes audio data efficiently. 
-
-    Each generator must contain an initilization yield as each of them will be started in the pipeline.
-
-    Usage:
-        # Example audio generator with initialization and send capability
-        def amplify(source, factor=2):
-            # Initialization
-            current_factor = factor
-            yield  # Initialization yield
-            
-            # Main processing loop
-            for sample in source:
-                # Can receive new amplification factor via send()
-                new_factor = yield sample * current_factor
-                if new_factor is not None:
-                    current_factor = new_factor
-        
-        # Create a pipeline using the >> operator
-        pipeline = (AudioPipeline()
-            >> (amplify, 2)
-            >> bandpass_filter
-            >> compressor)
-
-        # Apply to audio stream
-        audio_gen = pipeline(audio_samples)
-
-        # Compile for reuse
-        process = pipeline.compile()
-        output = list(process(another_stream))
-    """
 
     def __init__(self, *transforms: Tuple[Transform, ...]):
         """
-        Initialize a Pipeline with zero or more transformations.
+            Immutable pipeline that preserves order and chains audio processing transformations.
 
-        Args:
-            *transforms: Variable number of (function, args, kwargs) tuples representing
-                transformations to apply. Each function should return an AudioGenerator with
-                an initialization yield. Typically not called directly - use >> operator instead.
+            Creates a composable pipeline of generator transformations that can be applied to any source.
+            Each transformation in the pipeline receives the output of the previous transformation,
+            creating a lazy evaluation chain that processes audio data efficiently. 
+
+            Each generator must contain an initilization yield as each of them will be started in the pipeline.
+
+            Args:
+                *transforms: Variable number of (function, args, kwargs) tuples representing
+                    transformations to apply. Each function should return an AudioGenerator with
+                    an initialization yield. Typically not called directly - use >> operator instead.
+
+            Usage:
+                # Example audio generator with initialization and send capability
+                def amplify(source, factor=2):
+                    # Initialization
+                    current_factor = factor
+                    yield  # Initialization yield
+                    
+                    # Main processing loop
+                    for sample in source:
+                        # Can receive new amplification factor via send()
+                        new_factor = yield sample * current_factor
+                        if new_factor is not None:
+                            current_factor = new_factor
+                
+                # Create a pipeline using the >> operator
+                pipeline = (AudioPipeline()
+                    >> (amplify, 2)
+                    >> bandpass_filter
+                    >> compressor)
+
+                # Apply to audio stream
+                audio_gen = pipeline(audio_samples)
+
+                # Compile for reuse
+                process = pipeline.compile()
+                output = list(process(another_stream))
         """
         self.transforms = transforms
 
