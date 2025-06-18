@@ -150,7 +150,7 @@ class Speakers:
         """
         processor = AudioPipeline()
         if isinstance(audio, str):
-            processor = processor >> (stream_numpy_pcm_memory, {
+            processor >>= (stream_numpy_pcm_memory, {
                 "output_format": self.sample_format,
                 "nchannels": self.channels,
                 "sample_rate": self.sample_rate
