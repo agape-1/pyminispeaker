@@ -316,6 +316,10 @@ class AudioPipeline: # NOTE: All of AudioPipeline has been AI-generated and test
                 - If tuple: First element is the generator function, remaining elements are arguments
                 - If last tuple element is a dict, it's treated as kwargs
 
+            Generator functions in the pipeline first positional argument must be either:
+                - The initial `source` passed to the pipeline (for the first transform)
+                - The output from the previous transform in the chain (for subsequent transforms)
+
         Returns:
             Pipeline: New Pipeline instance with the transformation added.
 
