@@ -155,7 +155,7 @@ class Speakers:
                 "nchannels": self.channels,
                 "sample_rate": self.sample_rate
         })
-        if isinstance(audio, AsyncGeneratorType):
+        elif isinstance(audio, AsyncGeneratorType):
             processor = (processor 
                 >> (stream_async_buffer, 3)  # TODO: Make `max_buffer_chunks` accessible from higher level interface
                 >> (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))}))
