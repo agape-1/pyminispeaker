@@ -1,6 +1,6 @@
 # Typing
 from __future__ import annotations
-from typing_extensions import Buffer, Generator, Union, Callable, AsyncGenerator, Any, TypeVar, Tuple, TypeAlias, Dict
+from typing_extensions import Concatenate, ParamSpec, Buffer, Generator, Union, Callable, AsyncGenerator, Any, TypeVar, Tuple, TypeAlias, Dict
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, DitherMode, FramesType
@@ -249,8 +249,9 @@ def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Tr
 
 In = TypeVar('In') 
 Out = TypeVar('Out')
+Params = ParamSpec('P')
 AudioGenerator = Generator[Out, int, None]
-GeneratorFactory: TypeAlias = Callable[[In], AudioGenerator]
+GeneratorFactory: TypeAlias = Callable[Concatenate[In, Params], AudioGenerator]
 Args: TypeAlias = Tuple[Any, ...]
 Kwargs: TypeAlias = Dict[str, Any]
 Transform: TypeAlias = Tuple[GeneratorFactory, Args, Kwargs]
