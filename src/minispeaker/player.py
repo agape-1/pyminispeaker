@@ -156,9 +156,8 @@ class Speakers:
                 "sample_rate": self.sample_rate
         })
         elif isinstance(audio, AsyncGeneratorType):
-            processor = (processor 
-                >> (stream_async_buffer, 3)  # TODO: Make `max_buffer_chunks` accessible from higher level interface
-                >> (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))}))
+            audio = stream_async_buffer(audio, max_buffer_chunks=3) # TODO: Make `max_buffer_chunks` accessible from higher level interface
+            processor >>= (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))})
         elif isinstance(audio, GeneratorType):
             if getgeneratorstate(audio) == GEN_CREATED:
                 warn(f"Generator {audio} has not started. Please modify the generator to initially `yield b""`, or else the first audio chunk will skipped. Skipping the first audio chunk...")
