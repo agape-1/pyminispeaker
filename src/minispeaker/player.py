@@ -13,6 +13,7 @@ from threading import Thread
 from asyncio import get_event_loop, set_event_loop
 from minispeaker.processor.convert import sampleformat_to_dtype
 from minispeaker.asyncsync import Event, poll_async_generator
+from minispeaker.tracks import TrackMapping
 from inspect import getgeneratorstate, GEN_CREATED
 
 # Main dependencies
@@ -59,7 +60,7 @@ class Speakers:
             device_id=self._speaker_name_to_id(self.name),
         )
         self.set_internal_volume(1.0)
-        self.tracks: Dict[str, Track] = dict()
+        self.tracks = TrackMapping()
         self._running = Event()
         self.paused = False
         self.muted = False
@@ -264,7 +265,7 @@ class Speakers:
         return self._running.wait()
 
     def clear(self):
-        """Removes all current tracks.
+        """Removes all current tracks. An alert is sent indicating all the tracks are finished.
         """
         self.tracks.clear()
 
@@ -272,9 +273,13 @@ class Speakers:
         """Helper to allow access to an individual Track via self['track']."""
         return self.tracks[key]
 
-    def __delitem__(self, key: str):
-        """Helper to quickly remove an individual Track via del self['track']."""
-        del self.tracks[key]
+    def __delitem__(self, name: str):
+        """Remove a `Track` called `name`. An alert is sent indicating that`Track` is finished.
+
+        Args:
+            name (str): Name of the `Track`
+        """
+        del self.tracks[name]
 
     def __enter__(self):
         return self
