@@ -19,7 +19,7 @@ from inspect import getgeneratorstate, GEN_CREATED
 from minispeaker.devices import default_speaker
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
-from minispeaker.processor.pipes import stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
+from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
 from miniaudio import (
     Devices,
     PlaybackDevice,
@@ -148,33 +148,27 @@ class Speakers:
         Yields:
             ArrayLike: An audio chunk 
         """
+        processor = AudioPipeline() # AudioPipeline chaining is AI-generated and modified for correctness
         if isinstance(audio, str):
-            audio = stream_numpy_pcm_memory(
-                            filename=audio,
-                            output_format=self.sample_format,
-                            nchannels=self.channels,
-                            sample_rate=self.sample_rate
-                        )
-            next(audio)
+            processor >>= (stream_numpy_pcm_memory, {
+                "output_format": self.sample_format,
+                "nchannels": self.channels,
+                "sample_rate": self.sample_rate
+        })
         elif isinstance(audio, AsyncGeneratorType):
             audio = stream_async_buffer(audio, max_buffer_chunks=3) # TODO: Make `max_buffer_chunks` accessible from higher level interface
-            audio = poll_async_generator(audio,  loop=loop, default_empty_factory=lambda: np.empty((0, self.channels)))
-            next(audio)
+            processor >>= (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))})
         elif isinstance(audio, GeneratorType):
             if getgeneratorstate(audio) == GEN_CREATED:
                 warn(f"Generator {audio} has not started. Please modify the generator to initially `yield b""`, or else the first audio chunk will skipped. Skipping the first audio chunk...")
                 next(audio)
-        audio = stream_bytes_to_array(audio, self._dtype)
-        next(audio)
-        audio = stream_match_audio_channels(audio, self.channels)
-        next(audio)
-        audio = stream_num_frames(audio)
-        next(audio)
-        audio = stream_pad(audio, self.channels)
-        next(audio)
-        audio = stream_handle_mute(audio, track)
-        next(audio)
-        return audio
+        processor = (processor
+            >> (stream_bytes_to_array, self._dtype)
+            >> (stream_match_audio_channels, self.channels)
+            >> stream_num_frames
+            >> (stream_pad, self.channels)
+            >> (stream_handle_mute, track))
+        return processor(audio)
 
     def _play(self, loop: AbstractEventLoop, audio: str | Generator[ArrayLike, int, None] | AsyncGenerator[ArrayLike, int], name: str):
         """Internal function to properly manipulate audio stream data for pause, mute, and wait functionality.

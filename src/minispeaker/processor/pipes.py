@@ -1,6 +1,6 @@
 # Typing
 from __future__ import annotations
-from typing_extensions import Buffer, Generator, Union, Callable, AsyncGenerator, Any
+from typing_extensions import Concatenate, ParamSpec, Buffer, Generator, Union, Callable, AsyncGenerator, Any, TypeVar, Tuple, TypeAlias, Dict
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, DitherMode, FramesType
@@ -245,4 +245,154 @@ def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Tr
             else:
                 num_frames = yield audio
         except StopIteration:
-            break 
+            break
+
+In = TypeVar('In') 
+Out = TypeVar('Out')
+Params = ParamSpec('P')
+AudioGenerator = Generator[Out, int, None]
+GeneratorFactory: TypeAlias = Callable[Concatenate[In, Params], AudioGenerator]
+Args: TypeAlias = Tuple[Any, ...]
+Kwargs: TypeAlias = Dict[str, Any]
+Transform: TypeAlias = Tuple[GeneratorFactory, Args, Kwargs]
+
+class AudioPipeline: # NOTE: All of AudioPipeline have been AI-generated and tested + verified for correctness
+
+    def __init__(self, *transforms: Transform):
+        """
+            Immutable pipeline that preserves order and chains audio processing transformations.
+
+            Creates a composable pipeline of generator transformations that can be applied to any source.
+            Each transformation in the pipeline receives the output of the previous transformation,
+            creating a lazy evaluation chain that processes audio data efficiently. 
+
+            Each generator must contain an initilization yield as each of them will be started in the pipeline.
+
+            Args:
+                *transforms: Variable number of (function, args, kwargs) tuples representing
+                    transformations to apply. Each function should return an AudioGenerator with
+                    an initialization yield. Typically not called directly - use >> operator instead.
+
+            Usage:
+                # Example audio generator with initialization and send capability
+                def amplify(source, factor=2):
+                    # Initialization
+                    current_factor = factor
+                    yield  # Initialization yield
+                    
+                    # Main processing loop
+                    for sample in source:
+                        # Can receive new amplification factor via send()
+                        new_factor = yield sample * current_factor
+                        if new_factor is not None:
+                            current_factor = new_factor
+                
+                # Create a pipeline using the >> operator
+                pipeline = (AudioPipeline()
+                    >> (amplify, 2)
+                    >> bandpass_filter
+                    >> compressor)
+
+                # Apply to audio stream
+                audio_gen = pipeline(audio_samples)
+
+                # Compile for reuse
+                process = pipeline.compile()
+                output = list(process(another_stream))
+        """
+        self.transforms = transforms
+
+    def __rshift__(self, transform: Union[GeneratorFactory, Transform]) -> 'AudioPipeline':
+        """
+        Add a transformation to the pipeline using the >> operator.
+
+        Creates a new Pipeline instance with the additional transformation appended,
+        preserving immutability. The transformation should be a generator function
+        that yields once for initialization and can accept integer values via send().
+
+        Args:
+            transform: Either a generator function or a tuple of (generator_function, *args, **kwargs).
+                - If callable: Applied with no additional arguments
+                - If tuple: First element is the generator function, remaining elements are arguments
+                - If last tuple element is a dict, it's treated as kwargs
+
+            Generator functions in the pipeline first positional argument must be either:
+                - The initial `source` passed to the pipeline (for the first transform)
+                - The output from the previous transform in the chain (for subsequent transforms)
+
+        Returns:
+            Pipeline: New Pipeline instance with the transformation added.
+
+        Raises:
+            TypeError: If transform is neither callable nor tuple.
+        """
+        if callable(transform):
+            return AudioPipeline(*self.transforms, (transform, (), {}))
+        elif isinstance(transform, tuple):
+            func = transform[0]
+            args = transform[1:] if len(transform) > 1 else ()
+            kwargs = {}
+            if args and isinstance(args[-1], dict):
+                args, kwargs = args[:-1], args[-1]
+            return AudioPipeline(*self.transforms, (func, args, kwargs))
+        else:
+            raise TypeError(f"Generator {transform} must be callable or tuple")
+
+    def __call__(self, source: In) -> AudioGenerator:
+        """
+        Apply the pipeline to a source.
+
+        Executes all transformations in order, passing the output of each
+        transformation as input to the next. Each generator will be `GEN_STARTED` by having their first
+        yield consumed before processing begins.
+
+        Args:
+            source: The input to process through the pipeline. Can be any type
+                that the first generator in the chain accepts (iterable, generator, etc).
+
+        Returns:
+            AudioGenerator: Curried `AudioGenerator` of `transforms`
+
+        """
+        result = source
+        for func, args, kwargs in self.transforms:
+            result = func(result, *args, **kwargs)
+            next(result)  # Consume initialization yield
+        return result
+
+    def compile(self) -> GeneratorFactory:
+        """
+        Compile the pipeline into a reusable generator factory.
+        
+        Returns a function that can be called multiple times with different
+        sources. Each call will create a new chain of initialized generators
+        that process the input and support send() communication.
+        
+        Returns:
+            GeneratorFactory: Function that returns a curried `AudioGenerator` of `transforms`
+        """
+        return self.__call__
+
+    def __repr__(self):
+        """
+        Return a string representation of the pipeline for debugging.
+
+        Shows the sequence of transformations in a readable format using >> notation.
+        Functions with arguments are displayed with ellipsis to indicate parameters.
+
+        Returns:
+            str: Human-readable representation of the pipeline structure.
+        """
+        cls_name = type(self).__name__
+        if not self.transforms:
+            return f"{cls_name}()"
+
+        steps = []
+        for func, args, kwargs in self.transforms:
+            name = func.__name__ if hasattr(func, "__name__") else str(func)
+            if args or kwargs:
+                steps.append(f"{name}(...)")
+            else:
+                steps.append(name)
+
+        return f"{cls_name}({' >> '.join(steps)})"
