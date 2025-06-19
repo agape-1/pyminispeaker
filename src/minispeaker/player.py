@@ -256,6 +256,7 @@ class Speakers:
     def exit(self):
         """Close the speaker. After Speakers().exit() is called, any calls to play with this Speaker object will be undefined behavior."""
         self._running.set()
+        self.tracks.clear()
         self._PlaybackDevice.close()
 
     def wait(self):
