@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
-from typing_extensions import Annotated, Dict, Optional, Generator, AsyncGenerator
+from typing_extensions import Callable, Annotated, Dict, Optional, Generator, AsyncGenerator
 from types import AsyncGeneratorType, GeneratorType
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
@@ -15,6 +15,8 @@ from minispeaker.processor.convert import sampleformat_to_dtype
 from minispeaker.asyncsync import Event, poll_async_generator
 from minispeaker.tracks import TrackMapping
 from inspect import getgeneratorstate, GEN_CREATED
+from functools import partial
+from atexit import register
 
 # Main dependencies
 from minispeaker.devices import default_speaker
@@ -64,6 +66,7 @@ class Speakers:
         self._running = Event()
         self.paused = False
         self.muted = False
+        register(self._on_exit)
 
     @property
     def _dtype(self) -> DTypeLike:
@@ -253,11 +256,35 @@ class Speakers:
         play_background = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
         play_background.start()
 
+    @property
+    def _on_exit(self) -> Callable[[], None]:
+        """
+        Internal function used to close the `Speaker` object.
+    
+        This implementation is a function factory disguised as a method via the `@property` decorator.
+        In other words, every call to `Speaker._exit` will return an new instance of the `close()` function.
+        
+        The purpose behind the implementation is to prevent [memory collection holds](https://stackoverflow.com/questions/16333054/what-are-the-implications-of-registering-an-instance-method-with-atexit-in-pytho) on cleanup.
+
+        Usage:
+            speaker._on_exit()  # Exit now
+            atexit.register(speaker._on_exit)  # Register for later
+        """
+        def close(running: Event, tracks: TrackMapping, PlaybackDevice: PlaybackDevice):
+            """Release all resources and any signaling.
+            Args:
+                running (Event): Signal for when the Speaker is playing any track.
+                tracks (TrackMapping): Dictionary of all tracks keyed by name.
+                PlaybackDevice (PlaybackDevice): Internal `Speaker` playback device.
+            """
+            running.set()
+            tracks.clear()
+            PlaybackDevice.close()
+        return partial(close, running=self._running, tracks=self.tracks, PlaybackDevice=self._PlaybackDevice)
+
     def exit(self):
         """Close the speaker. After Speakers().exit() is called, any calls to play with this Speaker object will be undefined behavior."""
-        self._running.set()
-        self.tracks.clear()
-        self._PlaybackDevice.close()
+        self._on_exit()
 
     def wait(self):
         """By default, playing will run in the background while other code is executed.
