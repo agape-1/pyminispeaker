@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
-from typing_extensions import Callable, Annotated, Dict, Optional, Generator, AsyncGenerator
+from typing_extensions import Callable, Annotated, Optional, Generator, AsyncGenerator
 from types import AsyncGeneratorType, GeneratorType
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
