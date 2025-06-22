@@ -62,15 +62,15 @@ class MaDeviceState(Enum):
     STOPPING = lib.ma_device_state_stopping
     STARTING = lib.ma_device_state_starting
 
-@dataclass
 class LockPlaybackDevice(_MiniaudioPlaybackDevice):
     """
     Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and
     thread-safe concurrency."""
     
-    def __post_init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._lock = Lock()
-        
+
     @property
     def state(self):
         """
