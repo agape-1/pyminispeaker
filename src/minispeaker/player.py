@@ -19,13 +19,12 @@ from functools import partial
 from atexit import register
 
 # Main dependencies
-from minispeaker.devices import default_speaker
+from minispeaker.devices import default_speaker, LockPlaybackDevice
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
 from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
 from miniaudio import (
     Devices,
-    PlaybackDevice,
     stream_with_callbacks
 )
 import numpy as np
@@ -55,7 +54,7 @@ class Speakers:
     volume: float = 1.0
 
     def __post_init__(self):
-        self._PlaybackDevice = PlaybackDevice(
+        self._PlaybackDevice = LockPlaybackDevice(
             output_format=self.sample_format,
             nchannels=self.channels,
             sample_rate=self.sample_rate,
@@ -191,15 +190,14 @@ class Speakers:
 
         track._stream = audio_controller
 
-        if not self._PlaybackDevice.running:
-            mixer = master_mixer(tracks=self.tracks,
-                                 paused=lambda: self.paused, 
-                                 muted= lambda: self.muted,
-                                 volume=lambda: self.volume,
-                                 dtype=self._dtype,
-                                 running=self._running)
-            next(mixer)
-            self._PlaybackDevice.start(mixer)
+        mixer = master_mixer(tracks=self.tracks,
+                                paused=lambda: self.paused, 
+                                muted= lambda: self.muted,
+                                volume=lambda: self.volume,
+                                dtype=self._dtype,
+                                running=self._running)
+        next(mixer)
+        self._PlaybackDevice.start(mixer)
 
     def play(
         self,
