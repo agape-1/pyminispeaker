@@ -1,8 +1,11 @@
 # Typing
 from typing_extensions import List
-from miniaudio import MiniaudioError
+from dataclasses import dataclass
+from miniaudio import MiniaudioError, PlaybackDevice as _MiniaudioPlaybackDevice
+from enum import Enum
 
 # Main dependencies
+from threading import Lock
 from _miniaudio import ffi, lib # ffi, lib may be subject to change because it is imported from an internal library
 from miniaudio import Devices
 
@@ -51,3 +54,52 @@ def available_speakers() -> List[str]:
         List[str]: A list of available speakers
     """
     return list(map(lambda speaker: speaker["name"], Devices().get_playbacks()))
+
+class MaDeviceState(Enum):
+    UNINITIALIZED= lib.ma_device_state_uninitialized
+    STOPPED = lib.ma_device_state_stopped
+    STARTED = lib.ma_device_state_started
+    STOPPING = lib.ma_device_state_stopping
+    STARTING = lib.ma_device_state_starting
+
+@dataclass
+class LockPlaybackDevice(_MiniaudioPlaybackDevice):
+    """
+    Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and
+    thread-safe concurrency."""
+    
+    def __post_init__(self):
+        self._lock = Lock()
+        
+    @property
+    def state(self):
+        """
+        Retrieves `ma_device_state` from `PlaybackDevice`
+        """
+        return MaDeviceState(lib.ma_device_is_started(self._device))
+
+    @property
+    def starting(self):
+        return self.state == MaDeviceState.STARTING
+
+    @property
+    def stopping(self):
+        return self.state == MaDeviceState.STOPPING
+
+    @property
+    def stopped(self):
+        return self.state == MaDeviceState.STOPPED
+
+    @property
+    def started(self):
+        return self.state == MaDeviceState.STARTED
+
+    def start(self, callback_generator):
+        with self._lock:
+            if not self.starting and not self.started:
+                super().start(callback_generator)
+
+    def stop(self):
+        with self._lock:
+            if not self.stopping and not self.stopped:
+                super().stop()
