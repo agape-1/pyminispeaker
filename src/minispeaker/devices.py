@@ -76,6 +76,8 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
         """
         Retrieves `ma_device_state` from `PlaybackDevice`
         """
+        if not self.closed:
+            return MaDeviceState.UNINITIALIZED
         return MaDeviceState(lib.ma_device_is_started(self._device))
 
     @property
@@ -91,6 +93,11 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
         return self.state == MaDeviceState.STOPPED
 
     @property
+    def closed(self):
+        "Is the `PlaybackDevice` uninitialized?"
+        return not self._device # `self._device is maintained as None when the device is uninitialized at https://github.com/irmen/pyminiaudio/blob/601d03ceb6f7c3886aa295d0b4459424732f1547/miniaudio.py#L1435
+
+    @property
     def started(self):
         return self.state == MaDeviceState.STARTED
 
@@ -101,5 +108,5 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
 
     def stop(self):
         with self._lock:
-            if not self.stopping and not self.stopped:
+            if not self.closed and not self.stopping and not self.stopped:
                 super().stop()
