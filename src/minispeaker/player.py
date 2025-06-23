@@ -120,17 +120,15 @@ class Speakers:
         """Unmutes the speaker. Does nothing if the speaker is not muted."""
         self.muted = False
 
-    def _handle_audio_end(self, name: str, track_end: Event):
+    def _handle_audio_end(self, name: str):
         """Tells anyone running Speakers().wait() to stop waiting on end of audio.
 
-        Args:z
+        Args:
             name (str): Name of the Track.
-            track_end (Event): Anyone running wait() on track_end Event.
         """
 
         def alert_and_remove_track():
-            del self.tracks[name]
-            track_end.set()
+            del self.tracks[name] # NOTE: `TrackMapping()` assumed to handle signal waiting when deleted
             if not self.tracks:
                 Thread(target=self._PlaybackDevice.stop, daemon=True).start()
         return alert_and_remove_track
@@ -180,10 +178,9 @@ class Speakers:
             name (str): A custom name which will be accessible by self[name].
         """
         track = self.tracks[name]
-        end_signal = track._signal
         set_event_loop(loop)
         audio = self._unify_audio_types(audio, loop, track)
-        audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name, end_signal))
+        audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name))
         next(audio_controller)
 
         track._stream = audio_controller
