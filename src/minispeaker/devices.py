@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing_extensions import List
 from miniaudio import MiniaudioError, PlaybackDevice as _MiniaudioPlaybackDevice
 from enum import Enum
+from minispeaker.asyncsync import Event
 
 # Main dependencies
 from threading import Lock
@@ -67,9 +68,10 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
     Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and
     thread-safe concurrency."""
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, stopped: Event, **kwargs):
+        self._stopped = stopped
         self._lock = Lock()
+        super().__init__(*args, **kwargs)
 
     @property
     def state(self):
@@ -107,6 +109,11 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
         if not self.closed and isinstance(self._device.masterVolumeFactor, float):
             self._device.masterVolumeFactor = vol
 
+    def wait(self):
+        """Waits for the `PlaybackDevice` to be stopped.
+        """
+        return self._stopped.wait()
+
     @property
     def starting(self):
         return self.state == MaDeviceState.STARTING
@@ -133,8 +140,10 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
             if not self.closed and not self.starting and not self.started:
                 self.volume = 1.0 # Hardcode volume factor to ensure consistent baseline volume
                 super().start(callback_generator)
+                self._stopped.clear()
 
     def stop(self):
         with self._lock:
             if not self.closed and not self.stopping and not self.stopped:
                 super().stop()
+                self._stopped.set()

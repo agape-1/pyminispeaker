@@ -59,9 +59,9 @@ class Speakers:
             nchannels=self.channels,
             sample_rate=self.sample_rate,
             device_id=self._speaker_name_to_id(self.name),
+            stopped=Event(),
         )
         self.tracks = TrackMapping()
-        self._running = Event()
         self.paused = False
         self.muted = False
         register(self._on_exit)
@@ -132,7 +132,6 @@ class Speakers:
             del self.tracks[name]
             track_end.set()
             if not self.tracks:
-                self._running.set() # TODO: Figure out how to handle `_PlaybackDevice` start and close
                 Thread(target=self._PlaybackDevice.stop, daemon=True).start()
         return alert_and_remove_track
 
@@ -194,7 +193,7 @@ class Speakers:
                                 muted= lambda: self.muted,
                                 volume=lambda: self.volume,
                                 dtype=self._dtype,
-                                running=self._running)
+                                running=self._PlaybackDevice._stopped)
         next(mixer)
         self._PlaybackDevice.start(mixer)
 
@@ -243,8 +242,6 @@ class Speakers:
         if volume is None:
             volume = self.volume
 
-        self._running.clear()
-
         track = Track(
             name=name, paused=paused, muted=muted, volume=volume, realtime=realtime, _signal=Event(), _stream=stream_sentinel()
         )
@@ -267,17 +264,17 @@ class Speakers:
             speaker._on_exit()  # Exit now
             atexit.register(speaker._on_exit)  # Register for later
         """
-        def close(running: Event, tracks: TrackMapping, PlaybackDevice: PlaybackDevice):
+        def close(stopped: Event, tracks: TrackMapping, PlaybackDevice: PlaybackDevice):
             """Release all resources and any signaling.
             Args:
-                running (Event): Signal for when the Speaker is playing any track.
+                stopped (Event): Signal for when the Speaker is playing any track.
                 tracks (TrackMapping): Dictionary of all tracks keyed by name.
                 PlaybackDevice (PlaybackDevice): Internal `Speaker` playback device.
             """
-            running.set()
+            stopped.set()
             tracks.clear()
             PlaybackDevice.close()
-        return partial(close, running=self._running, tracks=self.tracks, PlaybackDevice=self._PlaybackDevice)
+        return partial(close, stopped=self._PlaybackDevice._stopped, tracks=self.tracks, PlaybackDevice=self._PlaybackDevice)
 
     def exit(self):
         """Close the speaker. After Speakers().exit() is called, any calls to play with this Speaker object will be undefined behavior."""
@@ -287,7 +284,7 @@ class Speakers:
         """By default, playing will run in the background while other code is executed.
         Call this function to wait for the speaker to finish playing before moving to the next part of the code.
         """
-        return self._running.wait()
+        return self._PlaybackDevice.wait()
 
     def clear(self):
         """Removes all current tracks. An alert is sent indicating all the tracks are finished.
