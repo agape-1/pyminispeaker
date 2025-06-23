@@ -134,7 +134,7 @@ class Speakers:
             track_end.set()
             if not self.tracks:
                 self._running.set() # TODO: Figure out how to handle `_PlaybackDevice` start and close
-
+                Thread(target=self._PlaybackDevice.stop, daemon=True).start()
         return alert_and_remove_track
 
     def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
