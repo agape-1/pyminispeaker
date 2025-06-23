@@ -193,7 +193,7 @@ class Speakers:
                                 muted= lambda: self.muted,
                                 volume=lambda: self.volume,
                                 dtype=self._dtype,
-                                running=self._PlaybackDevice._stopped)
+                                stopped=self._PlaybackDevice._stopped)
         next(mixer)
         self._PlaybackDevice.start(mixer)
 
