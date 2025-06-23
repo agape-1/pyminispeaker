@@ -60,7 +60,6 @@ class Speakers:
             sample_rate=self.sample_rate,
             device_id=self._speaker_name_to_id(self.name),
         )
-        self.set_internal_volume(1.0)
         self.tracks = TrackMapping()
         self._running = Event()
         self.paused = False

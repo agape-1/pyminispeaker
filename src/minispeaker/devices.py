@@ -1,6 +1,6 @@
 # Typing
+from __future__ import annotations
 from typing_extensions import List
-from dataclasses import dataclass
 from miniaudio import MiniaudioError, PlaybackDevice as _MiniaudioPlaybackDevice
 from enum import Enum
 
@@ -80,6 +80,33 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
             return MaDeviceState.UNINITIALIZED
         return MaDeviceState(lib.ma_device_is_started(self._device))
 
+    @property 
+    def volume(self) -> float | None:
+        """
+        Returns:
+            float | None: _description_
+        """
+        if self.closed:
+            return None
+        return self._device.masterVolumeFactor
+
+    @volume.setter
+    def volume(self, vol: float):
+        """
+        Attempts to internally sets the volume of the internal PlaybackDevice.
+
+        Uses internal implementation _device.masterVolumeFactor, so this function
+        may not work if harmful changes are made to miniaudio or pyminiaudio.
+
+        Function is no-op if it does not dynamically pass sanity checks on internal implementation.
+
+        Args:
+            vol (float): The initial volume of the speaker as a percent decimal.
+        """
+        # From https://www.reddit.com/r/miniaudio/comments/17vi68d/comment/kf8l3lw/
+        if not self.closed and isinstance(self._device.masterVolumeFactor, float):
+            self._device.masterVolumeFactor = vol
+
     @property
     def starting(self):
         return self.state == MaDeviceState.STARTING
@@ -103,7 +130,8 @@ class LockPlaybackDevice(_MiniaudioPlaybackDevice):
 
     def start(self, callback_generator):
         with self._lock:
-            if not self.starting and not self.started:
+            if not self.closed and not self.starting and not self.started:
+                self.volume = 1.0 # Hardcode volume factor to ensure consistent baseline volume
                 super().start(callback_generator)
 
     def stop(self):
