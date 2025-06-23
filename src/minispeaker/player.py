@@ -19,7 +19,7 @@ from functools import partial
 from atexit import register
 
 # Main dependencies
-from minispeaker.devices import default_speaker, LockPlaybackDevice
+from minispeaker.devices import default_speaker, ConcurrentPlaybackDevice
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
 from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
@@ -54,7 +54,7 @@ class Speakers:
     volume: float = 1.0
 
     def __post_init__(self):
-        self._PlaybackDevice = LockPlaybackDevice(
+        self._PlaybackDevice = ConcurrentPlaybackDevice(
             output_format=self.sample_format,
             nchannels=self.channels,
             sample_rate=self.sample_rate,

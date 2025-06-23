@@ -1,7 +1,7 @@
 # Typing
 from __future__ import annotations
 from typing_extensions import List
-from miniaudio import MiniaudioError, PlaybackDevice as _MiniaudioPlaybackDevice
+from miniaudio import MiniaudioError, PlaybackDevice
 from enum import Enum
 from minispeaker.asyncsync import Event
 
@@ -63,7 +63,7 @@ class MaDeviceState(Enum):
     STOPPING = lib.ma_device_state_stopping
     STARTING = lib.ma_device_state_starting
 
-class LockPlaybackDevice(_MiniaudioPlaybackDevice):
+class ConcurrentPlaybackDevice(PlaybackDevice):
     """
     Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and
     thread-safe concurrency."""
