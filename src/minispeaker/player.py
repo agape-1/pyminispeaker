@@ -244,8 +244,8 @@ class Speakers:
         )
         self.tracks[name] = track
 
-        play_background = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
-        play_background.start()
+        process_audio = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
+        process_audio.start()
 
     @property
     def _on_exit(self) -> Callable[[], None]:
