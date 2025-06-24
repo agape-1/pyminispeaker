@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
-from typing_extensions import Annotated, Dict, Optional, Generator, AsyncGenerator
+from typing_extensions import Callable, Annotated, Optional, Generator, AsyncGenerator
 from types import AsyncGeneratorType, GeneratorType
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
@@ -13,16 +13,18 @@ from threading import Thread
 from asyncio import get_event_loop, set_event_loop
 from minispeaker.processor.convert import sampleformat_to_dtype
 from minispeaker.asyncsync import Event, poll_async_generator
+from minispeaker.tracks import TrackMapping
 from inspect import getgeneratorstate, GEN_CREATED
+from functools import partial
+from atexit import register
 
 # Main dependencies
-from minispeaker.devices import default_speaker
+from minispeaker.devices import default_speaker, ConcurrentPlaybackDevice
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
 from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
 from miniaudio import (
     Devices,
-    PlaybackDevice,
     stream_with_callbacks
 )
 import numpy as np
@@ -52,17 +54,17 @@ class Speakers:
     volume: float = 1.0
 
     def __post_init__(self):
-        self._PlaybackDevice = PlaybackDevice(
+        self._PlaybackDevice = ConcurrentPlaybackDevice(
             output_format=self.sample_format,
             nchannels=self.channels,
             sample_rate=self.sample_rate,
             device_id=self._speaker_name_to_id(self.name),
+            stopped=Event(),
         )
-        self.set_internal_volume(1.0)
-        self.tracks: Dict[str, Track] = dict()
-        self._running = Event()
+        self.tracks = TrackMapping()
         self.paused = False
         self.muted = False
+        register(self._on_exit)
 
     @property
     def _dtype(self) -> DTypeLike:
@@ -118,20 +120,17 @@ class Speakers:
         """Unmutes the speaker. Does nothing if the speaker is not muted."""
         self.muted = False
 
-    def _handle_audio_end(self, name: str, track_end: Event):
+    def _handle_audio_end(self, name: str):
         """Tells anyone running Speakers().wait() to stop waiting on end of audio.
 
-        Args:z
+        Args:
             name (str): Name of the Track.
-            track_end (Event): Anyone running wait() on track_end Event.
         """
 
         def alert_and_remove_track():
-            del self.tracks[name]
-            track_end.set()
+            del self.tracks[name] # NOTE: `TrackMapping()` assumed to handle signal waiting when deleted
             if not self.tracks:
-                self._running.set() # TODO: Figure out how to handle `_PlaybackDevice` start and close
-
+                Thread(target=self._PlaybackDevice.stop, daemon=True).start()
         return alert_and_remove_track
 
     def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
@@ -179,23 +178,21 @@ class Speakers:
             name (str): A custom name which will be accessible by self[name].
         """
         track = self.tracks[name]
-        end_signal = track._signal
         set_event_loop(loop)
         audio = self._unify_audio_types(audio, loop, track)
-        audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name, end_signal))
+        audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name))
         next(audio_controller)
 
         track._stream = audio_controller
 
-        if not self._PlaybackDevice.running:
-            mixer = master_mixer(tracks=self.tracks,
-                                 paused=lambda: self.paused, 
-                                 muted= lambda: self.muted,
-                                 volume=lambda: self.volume,
-                                 dtype=self._dtype,
-                                 running=self._running)
-            next(mixer)
-            self._PlaybackDevice.start(mixer)
+        mixer = master_mixer(tracks=self.tracks,
+                                paused=lambda: self.paused, 
+                                muted= lambda: self.muted,
+                                volume=lambda: self.volume,
+                                dtype=self._dtype,
+                                stopped=self._PlaybackDevice._stopped)
+        next(mixer)
+        self._PlaybackDevice.start(mixer)
 
     def play(
         self,
@@ -242,29 +239,52 @@ class Speakers:
         if volume is None:
             volume = self.volume
 
-        self._running.clear()
-
         track = Track(
             name=name, paused=paused, muted=muted, volume=volume, realtime=realtime, _signal=Event(), _stream=stream_sentinel()
         )
         self.tracks[name] = track
 
-        play_background = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
-        play_background.start()
+        process_audio = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
+        process_audio.start()
+
+    @property
+    def _on_exit(self) -> Callable[[], None]:
+        """
+        Internal function used to close the `Speaker` object.
+    
+        This implementation is a function factory disguised as a method via the `@property` decorator.
+        In other words, every call to `Speaker._exit` will return an new instance of the `close()` function.
+        
+        The purpose behind the implementation is to prevent [memory collection holds](https://stackoverflow.com/questions/16333054/what-are-the-implications-of-registering-an-instance-method-with-atexit-in-pytho) on cleanup.
+
+        Usage:
+            speaker._on_exit()  # Exit now
+            atexit.register(speaker._on_exit)  # Register for later
+        """
+        def close(stopped: Event, tracks: TrackMapping, PlaybackDevice: PlaybackDevice):
+            """Release all resources and any signaling.
+            Args:
+                stopped (Event): Signal for when the Speaker is playing any track.
+                tracks (TrackMapping): Dictionary of all tracks keyed by name.
+                PlaybackDevice (PlaybackDevice): Internal `Speaker` playback device.
+            """
+            stopped.set()
+            tracks.clear()
+            PlaybackDevice.close()
+        return partial(close, stopped=self._PlaybackDevice._stopped, tracks=self.tracks, PlaybackDevice=self._PlaybackDevice)
 
     def exit(self):
         """Close the speaker. After Speakers().exit() is called, any calls to play with this Speaker object will be undefined behavior."""
-        self._running.set()
-        self._PlaybackDevice.close()
+        self._on_exit()
 
     def wait(self):
         """By default, playing will run in the background while other code is executed.
         Call this function to wait for the speaker to finish playing before moving to the next part of the code.
         """
-        return self._running.wait()
+        return self._PlaybackDevice.wait()
 
     def clear(self):
-        """Removes all current tracks.
+        """Removes all current tracks. An alert is sent indicating all the tracks are finished.
         """
         self.tracks.clear()
 
@@ -272,9 +292,13 @@ class Speakers:
         """Helper to allow access to an individual Track via self['track']."""
         return self.tracks[key]
 
-    def __delitem__(self, key: str):
-        """Helper to quickly remove an individual Track via del self['track']."""
-        del self.tracks[key]
+    def __delitem__(self, name: str):
+        """Remove a `Track` called `name`. An alert is sent indicating that`Track` is finished.
+
+        Args:
+            name (str): Name of the `Track`
+        """
+        del self.tracks[name]
 
     def __enter__(self):
         return self

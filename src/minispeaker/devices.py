@@ -1,8 +1,12 @@
 # Typing
+from __future__ import annotations
 from typing_extensions import List
-from miniaudio import MiniaudioError
+from miniaudio import MiniaudioError, PlaybackDevice
+from enum import Enum
+from minispeaker.asyncsync import Event
 
 # Main dependencies
+from threading import Lock
 from _miniaudio import ffi, lib # ffi, lib may be subject to change because it is imported from an internal library
 from miniaudio import Devices
 
@@ -51,3 +55,95 @@ def available_speakers() -> List[str]:
         List[str]: A list of available speakers
     """
     return list(map(lambda speaker: speaker["name"], Devices().get_playbacks()))
+
+class MaDeviceState(Enum):
+    UNINITIALIZED= lib.ma_device_state_uninitialized
+    STOPPED = lib.ma_device_state_stopped
+    STARTED = lib.ma_device_state_started
+    STOPPING = lib.ma_device_state_stopping
+    STARTING = lib.ma_device_state_starting
+
+class ConcurrentPlaybackDevice(PlaybackDevice):
+    """
+    Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and
+    thread-safe concurrency."""
+    
+    def __init__(self, *args, stopped: Event, **kwargs):
+        self._stopped = stopped
+        self._lock = Lock()
+        super().__init__(*args, **kwargs)
+
+    @property
+    def state(self):
+        """
+        Retrieves `ma_device_state` from `PlaybackDevice`
+        """
+        if not self.closed:
+            return MaDeviceState.UNINITIALIZED
+        return MaDeviceState(lib.ma_device_is_started(self._device))
+
+    @property 
+    def volume(self) -> float | None:
+        """
+        Returns:
+            float | None: _description_
+        """
+        if self.closed:
+            return None
+        return self._device.masterVolumeFactor
+
+    @volume.setter
+    def volume(self, vol: float):
+        """
+        Attempts to internally sets the volume of the internal PlaybackDevice.
+
+        Uses internal implementation _device.masterVolumeFactor, so this function
+        may not work if harmful changes are made to miniaudio or pyminiaudio.
+
+        Function is no-op if it does not dynamically pass sanity checks on internal implementation.
+
+        Args:
+            vol (float): The initial volume of the speaker as a percent decimal.
+        """
+        # From https://www.reddit.com/r/miniaudio/comments/17vi68d/comment/kf8l3lw/
+        if not self.closed and isinstance(self._device.masterVolumeFactor, float):
+            self._device.masterVolumeFactor = vol
+
+    def wait(self):
+        """Waits for the `PlaybackDevice` to be stopped.
+        """
+        return self._stopped.wait()
+
+    @property
+    def starting(self):
+        return self.state == MaDeviceState.STARTING
+
+    @property
+    def stopping(self):
+        return self.state == MaDeviceState.STOPPING
+
+    @property
+    def stopped(self):
+        return self.state == MaDeviceState.STOPPED
+
+    @property
+    def closed(self):
+        "Is the `PlaybackDevice` uninitialized?"
+        return not self._device # `self._device is maintained as None when the device is uninitialized at https://github.com/irmen/pyminiaudio/blob/601d03ceb6f7c3886aa295d0b4459424732f1547/miniaudio.py#L1435
+
+    @property
+    def started(self):
+        return self.state == MaDeviceState.STARTED
+
+    def start(self, callback_generator):
+        with self._lock:
+            if not self.closed and not self.starting and not self.started:
+                self.volume = 1.0 # Hardcode volume factor to ensure consistent baseline volume
+                super().start(callback_generator)
+                self._stopped.clear()
+
+    def stop(self):
+        with self._lock:
+            if not self.closed and not self.stopping and not self.stopped:
+                super().stop()
+                self._stopped.set()
