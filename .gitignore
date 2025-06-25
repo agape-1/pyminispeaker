@@ -195,3 +195,5 @@ cython_debug/
 
 # Documentation site in `docs`
 node_modules
+.vitepress
+!config.mts
