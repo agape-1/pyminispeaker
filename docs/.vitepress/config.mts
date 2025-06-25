@@ -3,7 +3,7 @@ import { generateSidebar } from 'vitepress-sidebar'
 
 const vitePressSidebarOptions = {
   hyphenToSpace: true,
-  capitalizeEachWords: true,
+  capitalizeFirst: true,
   keepMarkdownSyntaxFromTitle: true,
   useTitleFromFileHeading: true,
   collapsed: true,
