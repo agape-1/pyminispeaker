@@ -2,6 +2,11 @@ import {defineConfig} from '@lando/vitepress-theme-default-plus/config';
 import { generateSidebar } from 'vitepress-sidebar'
 
 const vitePressSidebarOptions = {
+  hyphenToSpace: true,
+  capitalizeEachWords: true,
+  keepMarkdownSyntaxFromTitle: true,
+  useTitleFromFileHeading: true,
+  collapsed: true,
   documentRootPath: '.'// NOTE: Assumes currently working directory `docs/`
 };
 
