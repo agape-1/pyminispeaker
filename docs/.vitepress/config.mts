@@ -20,7 +20,9 @@ export default defineConfig({
       satisfies: '*'
     },
     sidebar: generateSidebar(vitePressSidebarOptions),
-
+    search: {
+      provider: 'local'
+    },
     socialLinks: [
       { icon: 'github', link: 'https://github.com/agape-1/pyminispeaker' }
     ]
