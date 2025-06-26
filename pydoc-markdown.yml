@@ -18,6 +18,8 @@ processors:
 
 renderer:
   type: mkdocs
+  output_directory: .
+  content_directory_name: docs
   markdown:
     add_method_class_prefix: true  
     header_level_by_type:
