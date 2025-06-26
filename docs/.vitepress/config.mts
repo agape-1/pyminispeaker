@@ -4,6 +4,8 @@ import { generateSidebar } from 'vitepress-sidebar'
 const vitePressSidebarOptions = {
   hyphenToSpace: true,
   capitalizeFirst: true,
+  useFolderLinkFromIndexFile: true,
+  useFolderTitleFromIndexFile: true,
   keepMarkdownSyntaxFromTitle: true,
   useTitleFromFileHeading: true,
   collapsed: true,
