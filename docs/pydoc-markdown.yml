@@ -1,0 +1,70 @@
+loaders:
+  - type: python
+    search_path: [../src]
+
+processors:
+  - type: filter
+    exclude_private: true
+    exclude_special: true
+    skip_empty_modules: true
+
+  # Remove init methods
+  - type: filter
+    expression: |
+      not (name.startswith("__") and "init" in name)
+
+  - type: smart
+  - type: crossref
+
+renderer:
+  type: mkdocs
+  output_directory: ..
+  content_directory_name: docs
+  markdown:
+    add_method_class_prefix: true  
+    header_level_by_type:
+      Class: 2 # # Class
+      Method: 4 # ## Method
+      Function: 2 # # Function
+      Variable: 4 # ## Variable
+    render_page_title: true
+    descriptive_class_title: false
+    render_module_header_template: |
+      `{module_name}`
+    data_code_block: true
+    classdef_code_block: true
+    code_headers: true
+    classdef_with_decorators: false # To ignore @dataclass documentation
+    insert_header_anchors: false
+    source_linker: # NOTE: `source_linker` configuration is AI-generated, as no documentation references this usage in `pydoc-markdown`
+      type: github # or gitlab, bitbucket, gitea
+      repo: agape-1/pyminispeaker
+      use_branch: true # Use branch name instead of commit SHA
+    source_position: before signature # or "before signature"
+    source_format: '<p style="text-align: right"><a style="text-decoration:none;" href="{url}">[🔗]</a></p>' # Add HTML to customize styling
+  pages:
+    - title: API Documentation
+      children:
+        - title: Audio Playback
+          children:
+            - title: Audio Session
+              contents: [minispeaker.player.*]
+            - title: Track Control
+              contents: [minispeaker.tracks.*]
+
+        - title: Device Management
+          children: # Use children to force subdirectory creation
+            - title: Devices
+              contents: [minispeaker.devices.*]
+
+        - title: Audio Processing
+          children:
+            - title: Mixer
+              contents: [minispeaker.processor.mixer.*]
+            - title: Audio Pipelines
+              contents: [minispeaker.processor.pipes.*]
+            - title: Format Conversion
+              contents: [minispeaker.processor.convert.*]
+
+        - title: Asychronous Utilities
+          contents: [minispeaker.asyncsync.*]

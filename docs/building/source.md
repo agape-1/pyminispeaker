@@ -1,4 +1,4 @@
-# Build System
+# Compiling from Source
 
 This repository uses the [`uv`](https://docs.astral.sh/uv/configuration/build-backend/) build backend. As their build backend is currently in preview, expect breaking changes.
 
