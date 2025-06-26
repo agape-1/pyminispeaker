@@ -17,6 +17,9 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [ // TODO: Resolve navigation header
+      { text: 'API Documentation', link: '/building/source' }, // TODO: Configure links for these invalid navigation items
+      { text: 'Quickstart', link: '/building/source' },
+      { text: 'Examples', link: '/building/source' }
     ],
     multiVersionBuild: { // TODO: Resolve multi version build
       build: 'stable',
