@@ -1,5 +1,7 @@
-import {defineConfig} from '@lando/vitepress-theme-default-plus/config';
+import { defineConfigWithTheme } from 'vitepress'
 import { generateSidebar } from 'vitepress-sidebar'
+import baseConfig from 'vitepress-carbon/config'
+import type { ThemeConfig } from 'vitepress-carbon/config'
 
 const vitePressSidebarOptions = {
   hyphenToSpace: true,
@@ -12,8 +14,8 @@ const vitePressSidebarOptions = {
   documentRootPath: '.'// NOTE: Assumes currently working directory `docs/`
 };
 
-// https://vitepress.dev/reference/site-config
-export default defineConfig({
+export default defineConfigWithTheme<ThemeConfig>({
+  extends: baseConfig,
   title: "pyminispeaker",
   description: "[`py`[thonic]`mini`audio](https://github.com/irmen/pyminiaudio) `speaker` abstraction library",
   themeConfig: {
@@ -23,12 +25,6 @@ export default defineConfig({
       { text: 'Quickstart', link: '/building/source' },
       { text: 'Examples', link: '/building/source' }
     ],
-    multiVersionBuild: { // TODO: Resolve multi version build
-      build: 'stable',
-      match: '*',
-      base: '/v/',
-      satisfies: '*'
-    },
     sidebar: generateSidebar(vitePressSidebarOptions),
     search: {
       provider: 'local'
