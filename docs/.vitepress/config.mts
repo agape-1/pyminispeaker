@@ -16,6 +16,8 @@ const vitePressSidebarOptions = {
 
 export default defineConfigWithTheme<ThemeConfig>({
   extends: baseConfig,
+  lang: 'en-US',
+  base: '/pyminispeaker/',
   title: "pyminispeaker",
   description: "[`py`[thonic]`mini`audio](https://github.com/irmen/pyminiaudio) `speaker` abstraction library",
   themeConfig: {
