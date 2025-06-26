@@ -197,3 +197,5 @@ cython_debug/
 node_modules
 docs/.vitepress/**
 docs/api-documentation/**
+.generated-files.txt
+mkdocs.yaml
