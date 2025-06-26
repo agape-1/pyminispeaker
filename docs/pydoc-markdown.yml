@@ -23,10 +23,10 @@ renderer:
   markdown:
     add_method_class_prefix: true  
     header_level_by_type:
-      Class: 1 # # Class
-      Method: 2 # ## Method
-      Function: 1 # # Function
-      Variable: 2 # ## Variable
+      Class: 2 # # Class
+      Method: 4 # ## Method
+      Function: 2 # # Function
+      Variable: 4 # ## Variable
     render_page_title: true
     descriptive_class_title: false
     render_module_header_template: |
