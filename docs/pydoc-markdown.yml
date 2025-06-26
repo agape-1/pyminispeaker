@@ -1,6 +1,6 @@
 loaders:
   - type: python
-    search_path: [src]
+    search_path: [../src]
 
 processors:
   - type: filter
@@ -18,7 +18,7 @@ processors:
 
 renderer:
   type: mkdocs
-  output_directory: .
+  output_directory: ..
   content_directory_name: docs
   markdown:
     add_method_class_prefix: true  
