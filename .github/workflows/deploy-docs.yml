@@ -50,7 +50,7 @@ jobs:
         run: uv sync --group docs
 
       - name: Install Node dependencies
-        run: npm install
+        run: npm ci
 
       - name: Generate API documentation
         run: uv run pydoc-markdown
@@ -65,7 +65,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload docs/.vitepress/dist directory
-          path: ".vitepress/dist"
+          path: "docs/.vitepress/dist"
 
   # Deployment job
   deploy:
