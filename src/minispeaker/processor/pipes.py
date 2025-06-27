@@ -184,7 +184,7 @@ async def stream_async_buffer(sample_stream: AsyncGenerator[ArrayLike, None], ma
         try:
             async for audio in sample_stream:
                 await queue.put(audio)
-                if not audio_ready.is_set() and queue.qsize() == 2: # When the audio queue first starts, buffer slightly to prevent choppiness on first chunk playback
+                if not audio_ready.is_set() and queue.qsize() == max_buffer_chunks-1: # When the audio queue first starts, buffer slightly to prevent choppiness on first chunk playback
                     audio_ready.set()
         finally:
             await queue.put(STREAM_FINISHED)
@@ -282,7 +282,7 @@ def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Tr
 In = TypeVar('In') 
 Out = TypeVar('Out')
 Params = ParamSpec('P')
-AudioGenerator = Generator[Out, int, None] | AsyncGenerator[Out, None]
+AudioGenerator = Union[Generator[Out, int, None], AsyncGenerator[Out, None]]
 GeneratorFactory: TypeAlias = Callable[Concatenate[In, Params], AudioGenerator]
 Args: TypeAlias = Tuple[Any, ...]
 Kwargs: TypeAlias = Dict[str, Any]
