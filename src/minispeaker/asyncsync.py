@@ -35,7 +35,7 @@ E = TypeVar('E')
 
 
 def poll_async_generator(stream: AsyncGenerator[T, S], default_empty_factory: Callable[[], E] = lambda: None, loop: Optional[AbstractEventLoop] = None) -> Generator[T | E, S, None]:
-    """Converts a asychronous generator `stream` into a synchronous one via polling.
+    """Converts a asynchronous generator `stream` into a synchronous one via polling.
 
     Args:
         stream (AsyncGenerator[T, S]): Any `Asyncgenerator`.
@@ -57,10 +57,10 @@ def poll_async_generator(stream: AsyncGenerator[T, S], default_empty_factory: Ca
         async for item in stream:
             buffer.append(item)
     collect_items = run_coroutine_threadsafe(
-        stream_to_buffer(), loop)  # We should not use call_soon_threadsafe/run_coroutine_threadsafe on `__anext__()`, theoretically giving a asychronous generator may allow lower level optimizations verseus manually calling __anext__() unpredictably?
+        stream_to_buffer(), loop)  # We should not use call_soon_threadsafe/run_coroutine_threadsafe on `__anext__()`, theoretically giving a asynchronous generator may allow lower level optimizations verses manually calling __anext__() unpredictably?
     while not collect_items.done() or buffer:
         if buffer:
-            yield buffer.popleft()  # Space complexity of deque is O(1) because a sychronous polling consumer will almost always consume faster than a asychronous producer can provide.
+            yield buffer.popleft()  # Space complexity of deque is O(1) because a synchronous polling consumer will almost always consume faster than a asynchronous producer can provide.
         else:
             yield default_empty_factory()
 
@@ -73,8 +73,8 @@ class Event():
     true. The flag is initially false.
 
     Warning:
-    This class will automatically determine when to call a asychronous `wait` or synchronous `wait`.
-    To directly use the sychronous `wait`, use `Event.tevent` like `Threading.Event`
+    This class will automatically determine when to call a asynchronous `wait` or synchronous `wait`.
+    To directly use the synchronous `wait`, use `Event.tevent` like `Threading.Event`
     """
     def __init__(self):
         self.tevent = ThreadEvent()
@@ -113,7 +113,7 @@ class Event():
             timeout (Optional[float]): A floating point number specifying a timeout for the operation in seconds (or fractions thereof) to block. Defaults to None.
 
         Returns:
-            bool | Coroutine[Any, Any, Literal[True]]: If no asychronous loop is present, wait identical to threading.Event().wait(). Otherwise, return an equivalent coroutine of Event().wait().
+            bool | Coroutine[Any, Any, Literal[True]]: If no asynchronous loop is present, wait identical to threading.Event().wait(). Otherwise, return an equivalent coroutine of Event().wait().
         """
         if self._async:
             return _to_thread(self.tevent.wait, timeout=timeout)

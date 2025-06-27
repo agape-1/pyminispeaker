@@ -41,10 +41,10 @@ def stream_async_as_generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, N
     """Convenience function that returns a wrapped async generator from an `iterable`.
 
     Args:
-        iterable (AsyncIterable[T]): Any asychronous iterator audio stream.
+        iterable (AsyncIterable[T]): Any asynchronous iterator audio stream.
 
     Returns:
-        AsyncGenerator[T, None]: An identical `iterable` audio stream as a asychronous generator.
+        AsyncGenerator[T, None]: An identical `iterable` audio stream as a asynchronous generator.
     """
 
     async def generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, None]:
@@ -296,7 +296,7 @@ def stream_bytes_to_array(
 
 
 def stream_sentinel() -> Generator[ArrayLike, int, None]:
-    """Convenience generator function to simply yield nothing. Typically used agaisnt race conditions when track audio data is requested before the complete audio stream generator is initialized.
+    """Convenience generator function to simply yield nothing. Typically used against race conditions when track audio data is requested before the complete audio stream generator is initialized.
 
     Returns:
         Generator[ArrayLike, int, None]: Empty audio data
@@ -360,7 +360,7 @@ def stream_handle_mute(
             if track.muted:
                 num_frames = yield np.zeros(
                     np.shape(audio)
-                )  # NOTE: This is faster than `np.zeros_like(x)`, verify this by modifying the question `timeit` script and testing it agaisnt `np.zeroes(np.shape(audio))` from https://stackoverflow.com/questions/27464039/why-the-performance-difference-between-numpy-zeros-and-numpy-zeros-like
+                )  # NOTE: This is faster than `np.zeros_like(x)`, verify this by modifying the question `timeit` script and testing it against `np.zeroes(np.shape(audio))` from https://stackoverflow.com/questions/27464039/why-the-performance-difference-between-numpy-zeros-and-numpy-zeros-like
             else:
                 num_frames = yield audio
         except StopIteration:
@@ -384,7 +384,7 @@ class AudioPipeline:  # NOTE: All of AudioPipeline have been AI-generated and te
     Each transformation in the pipeline receives the output of the previous transformation,
     creating a lazy evaluation chain that processes audio data efficiently.
 
-    Each generator must contain an initilization yield as each of them will be started in the pipeline.
+    Each generator must contain an initialization yield as each of them will be started in the pipeline.
 
     Args:
         *transforms: Variable number of (function, args, kwargs) tuples representing

@@ -25,15 +25,15 @@ def master_mixer(
         tracks (Dict[str, Track]): Multiple audio streams represented as a dictionary of `Track`s.
         stopped (Event): When `master_mixer` should end.
         paused (Callable[[], bool]): When `paused` is evaluated to `True`, no audio streams will continue.
-        muted (Callable[[], bool]): When `muted` is evaluted to `True`, all audio streams will continue but will play no sound.
+        muted (Callable[[], bool]): When `muted` is evaluated to `True`, all audio streams will continue but will play no sound.
         volume (Callable[[], float]): Master volume.
         dtype (DTypeLike): SampleFormat equivalent of the underlying audio streams.
 
     Returns:
-        PlaybackCallbackGeneratorType: A miniaudio compaitable generator.
+        PlaybackCallbackGeneratorType: A miniaudio compatible generator.
 
     Yields:
-        Iterator[PlaybackCallbackGeneratorType]: Miniaudio compatiable audio data.
+        Iterator[PlaybackCallbackGeneratorType]: Miniaudio compatible audio data.
     """
     num_frames = yield b""
 

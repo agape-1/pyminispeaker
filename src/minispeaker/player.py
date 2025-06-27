@@ -356,7 +356,7 @@ class Speakers:
         """All `Tracks` being played are done in the background. Call this function to `wait` until no `Track`s in `Speaker` can be played.
 
         Returns:
-            bool | Coroutine[Any, Any, Literal[True]]: Either a sychronous or asychronous return result of `Event.wait`
+            bool | Coroutine[Any, Any, Literal[True]]: Either a synchronous or asynchronous return result of `Event.wait`
         """
         return self._PlaybackDevice.wait()
 
@@ -384,7 +384,7 @@ class Speakers:
         del self.tracks[name]
 
     def __enter__(self) -> Speakers:
-        """Since resoucrce initilization is done at `play` request rather than through a context managager, this function is no-op.
+        """Since resource initialization is done at `play` request rather than through a context manager, this function is no-op.
 
         Returns:
             Speakers: It`self`.

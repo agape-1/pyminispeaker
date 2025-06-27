@@ -139,7 +139,7 @@ class ConcurrentPlaybackDevice(PlaybackDevice):
         """Waits for the `PlaybackDevice` to be stopped.
 
         Returns:
-            bool | Coroutine[Any, Any, Literal[True]]: Either a sychronous or asychronous return result of `Event.wait`
+            bool | Coroutine[Any, Any, Literal[True]]: Either a synchronous or asynchronous return result of `Event.wait`
         """
         return self._stopped.wait()
 
