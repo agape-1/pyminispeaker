@@ -103,23 +103,6 @@ class Speakers:
             (speaker["id"] for speaker in speakers if speaker["name"] == name), None
         )
 
-    def set_internal_volume(self, volume: float):
-        """Attempts to internally sets the volume of the internal PlaybackDevice.
-
-        Uses internal implementation _device.masterVolumeFactor, so this function
-        may not work if harmful changes are made to miniaudio or pyminiaudio.
-
-        Function is no-op if it does not dynamically pass sanity checks on internal
-        implementation.
-
-        Args:
-            volume (float): The initial volume of the speaker as a percent decimal.
-        """
-        # From https://www.reddit.com/r/miniaudio/comments/17vi68d/comment/kf8l3lw/
-        device = self._PlaybackDevice._device
-        if isinstance(device.masterVolumeFactor, float):
-            device.masterVolumeFactor = volume
-
     def pause(self):
         """Pauses the speaker. Does nothing if the speaker is already paused."""
         self.paused = True
