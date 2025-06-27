@@ -303,7 +303,7 @@ class Speakers:
 
         process_audio = Thread(
             target=self._begin_playback,
-            args=(get_event_loop(), audio, name),
+            args=(get_event_loop(), audio, track),
             daemon=True,
         )
         process_audio.start()
