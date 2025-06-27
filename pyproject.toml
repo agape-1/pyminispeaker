@@ -47,3 +47,7 @@ build-backend = "uv_build"
 docs = [
     "pydoc-markdown>=4.8.2",
 ]
+lint = [
+    "pydoclint>=0.5.11",
+    "ruff>=0.12.1",
+]
