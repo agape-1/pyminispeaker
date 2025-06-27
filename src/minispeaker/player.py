@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
 from typing_extensions import Callable, Annotated, Optional, Generator, AsyncGenerator
+from collections.abc import AsyncIterator, Iterator
 from types import AsyncGeneratorType, GeneratorType
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
@@ -22,7 +23,7 @@ from atexit import register
 from minispeaker.devices import default_speaker, ConcurrentPlaybackDevice
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
-from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
+from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad, stream_as_generator, stream_async_as_generator
 from miniaudio import (
     Devices,
     stream_with_callbacks
@@ -49,7 +50,7 @@ class Speakers:
     name: Optional[str] = field(default_factory=default_speaker)
     sample_rate: int = 44100
     sample_format: SampleFormat = SampleFormat.SIGNED16
-    channels: int = 2
+    channels: int = 1
     buffer_size: int = 128
     volume: float = 1.0
 
@@ -133,7 +134,7 @@ class Speakers:
                 Thread(target=self._PlaybackDevice.stop, daemon=True).start()
         return alert_and_remove_track
 
-    def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
+    def _curried_audio_gen(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
         """Processes a variety of different audio formats by converting them to a synchronous generator.
 
         Args:
@@ -155,8 +156,9 @@ class Speakers:
                 "sample_rate": self.sample_rate
         })
         elif isinstance(audio, AsyncGeneratorType):
-            audio = stream_async_buffer(audio, max_buffer_chunks=3) # TODO: Make `max_buffer_chunks` accessible from higher level interface
-            processor >>= (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))})
+            processor = (processor 
+                >> (stream_async_buffer, {"max_buffer_chunks": 3})
+                >> (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))}))
         elif isinstance(audio, GeneratorType):
             if getgeneratorstate(audio) == GEN_CREATED:
                 warn(f"Generator {audio} has not started. Please modify the generator to initially `yield b""`, or else the first audio chunk will skipped. Skipping the first audio chunk...")
@@ -166,10 +168,11 @@ class Speakers:
             >> (stream_match_audio_channels, self.channels)
             >> stream_num_frames
             >> (stream_pad, self.channels)
-            >> (stream_handle_mute, track))
+            >> (stream_handle_mute, track)
+            >> (stream_with_callbacks, {"end_callback": self._handle_audio_end(track.name)}))
         return processor(audio)
 
-    def _play(self, loop: AbstractEventLoop, audio: str | Generator[ArrayLike, int, None] | AsyncGenerator[ArrayLike, int], name: str):
+    def _begin_playback(self, loop: AbstractEventLoop, audio: str | Generator[ArrayLike, int, None] | AsyncGenerator[ArrayLike, int], name: str):
         """Internal function to properly manipulate audio stream data for pause, mute, and wait functionality.
 
         Args:
@@ -179,11 +182,7 @@ class Speakers:
         """
         track = self.tracks[name]
         set_event_loop(loop)
-        audio = self._unify_audio_types(audio, loop, track)
-        audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name))
-        next(audio_controller)
-
-        track._stream = audio_controller
+        track._stream = audio = self._curried_audio_gen(audio, loop, track)
 
         mixer = master_mixer(tracks=self.tracks,
                                 paused=lambda: self.paused, 
@@ -196,7 +195,7 @@ class Speakers:
 
     def play(
         self,
-        audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int],
+        audio: str | Iterator[memoryview | bytes | ArrayLike] | AsyncIterator[memoryview | bytes| ArrayLike] | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int],
         name: Annotated[Optional[str], "Custom name for the audio."] = None,
         volume: Annotated[Optional[float], "The initial track volume."] = None,
         paused: Annotated[Optional[bool], "Should the audio not play immediately?"] = False,
@@ -220,7 +219,7 @@ class Speakers:
                 speaker.wait() # Wait until all the tracks are finished
 
         Args:
-            audio (str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int]): Audio file path or audio stream. The audio stream must be pre-initialized via next() and yield audio chunks as some form of an array. If you send() a number into the generator rather than just using next() on it, you'll get that given number of frames, instead of the default configured amount. See memory_stream() for an example.
+            audio (str | Iterator[memoryview  |  bytes  |  ArrayLike] | AsyncIterator[memoryview  |  bytes |  ArrayLike] | Generator[memoryview  |  bytes  |  ArrayLike, int, None] | AsyncGenerator[memoryview  |  bytes  |  ArrayLike, int]): Audio file path or audio stream. The audio stream can either be any form of async/sync iterator or generator. Keep in mind that for generators, they must be pre-initialized via next() and yield audio chunks as some form of an array, to allow the ability to send() a number into the generator and receive a corresponding number of audio frames, instead of the unknown pre-set amount. See memory_stream() for an example.
             name (str): A custom name which will be accessible by self[name]. Defaults to `audio`.
             volume (float): The individual Track's volume. Defaults to `self.volume`.
             paused (bool): Should the audio be immediately paused before playback? Defaults to `False`.
@@ -229,9 +228,13 @@ class Speakers:
         Raises:
             TypeError: The audio input is not valid and must be a correct file path.
         """
+        if isinstance(audio, AsyncIterator):
+            audio = stream_async_as_generator(audio)
+        if isinstance(audio, Iterator):
+            audio = stream_as_generator(audio)
 
         if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
-            raise TypeError(f"{audio} is not a string or a generator")
+            raise TypeError(f"{audio} is not a string, iterator, or a generator")
 
         if name is None:
             name = audio
@@ -244,7 +247,7 @@ class Speakers:
         )
         self.tracks[name] = track
 
-        process_audio = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
+        process_audio = Thread(target=self._begin_playback, args=(get_event_loop(), audio, name), daemon=True)
         process_audio.start()
 
     @property
@@ -261,7 +264,7 @@ class Speakers:
             speaker._on_exit()  # Exit now
             atexit.register(speaker._on_exit)  # Register for later
         """
-        def close(stopped: Event, tracks: TrackMapping, PlaybackDevice: PlaybackDevice):
+        def close(stopped: Event, tracks: TrackMapping, PlaybackDevice: ConcurrentPlaybackDevice):
             """Release all resources and any signaling.
             Args:
                 stopped (Event): Signal for when the Speaker is playing any track.
