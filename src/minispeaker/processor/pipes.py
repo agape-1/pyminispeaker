@@ -1,6 +1,6 @@
 # Typing
 from __future__ import annotations
-from typing_extensions import Concatenate, ParamSpec, Buffer, Generator, Union, Callable, AsyncGenerator, Any, TypeVar, Tuple, TypeAlias, Dict
+from typing_extensions import Concatenate, ParamSpec, Buffer, Generator, Union, Callable, AsyncGenerator, Any, TypeVar, Tuple, TypeAlias, Dict, Iterable, AsyncIterable
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, DitherMode, FramesType
@@ -17,6 +17,37 @@ from miniaudio import (
     PlaybackCallbackGeneratorType,
 )
 import numpy as np
+
+T = TypeVar('T')
+
+
+def stream_async_as_generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, None]:
+    """Convenience function that returns a wrapped async generator from an `iterable`.
+
+    Args:
+        iterable (AsyncIterable[T]): Any asychronous iterator audio stream.
+
+    Returns:
+        AsyncGenerator[T, None]: An identical `iterable` audio stream as a asychronous generator. 
+    """
+    async def generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, None]:
+        yield b""
+        async for value in iterable:
+            yield value
+    return generator(iterable)
+
+def stream_as_generator(iterable: Iterable[T]) -> Generator[T, None, None]:
+    """Convenience function that returns a wrapped generator from an `iterable`.
+
+    Args:
+        iterable (Iterable[T]): Any iterator audio stream.
+
+    Yields:
+        Generator[T, None, None]: An identical `iterable` audio stream as a generator.
+    """
+    yield b""
+    for value in iterable:
+        yield value
 
 def memory_stream(arr: ndarray) -> PlaybackCallbackGeneratorType:
     """Converts a numpy array into a stream.
