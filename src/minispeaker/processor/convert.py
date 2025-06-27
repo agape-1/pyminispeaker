@@ -10,9 +10,10 @@ from miniaudio import SampleFormat
 def sampleformat_to_dtype(
     sample_format: SampleFormat
 ) -> Union[uint8, int16, int32, float32]:
-    """
+    """Converts a `SampleFormat` to the numpy equivalent `dtype`.
+
     Args:
-        sample_format (Literal[SampleFormat.UNKNOWN, SampleFormat.UNSIGNED8, SampleFormat.SIGNED16, SampleFormat.SIGNED24, SampleFormat.SIGNED32, SampleFormat.FLOAT32]): miniaudio `SampleFormat` of the audio sample.
+        sample_format (SampleFormat): miniaudio `SampleFormat` of the audio sample.
 
     Returns:
         Union[uint8, int16, int32, float32]: A corresponding numpy dtype.
@@ -36,7 +37,8 @@ def sampleformat_to_dtype(
 
 
 def dtype_to_sampleformat(dtype: Union[None, uint8, int16, int32, float32]) -> SampleFormat:
-    """
+    """Converts a numpy `dtype` to an equivalent `SampleFormat`.
+
     Args:
         dtype (Union[None, uint8, int16, int32, float32]): Numpy dtype of the audio sample.
 

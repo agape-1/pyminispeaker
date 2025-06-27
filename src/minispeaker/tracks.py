@@ -1,7 +1,7 @@
 # Typing
 from __future__ import annotations
 from dataclasses import dataclass, InitVar
-from typing_extensions import Annotated, Dict
+from typing_extensions import Annotated, Dict, Coroutine, Any, Literal
 from numpy import ndarray
 from miniaudio import PlaybackCallbackGeneratorType
 from minispeaker.asyncsync import Event
@@ -9,12 +9,21 @@ from minispeaker.asyncsync import Event
 # Main dependencies
 from numpy import asarray
 
+
 @dataclass
 class Track:
-    """
-    Class that holds auxiliary information on a audio piece being played.
-    """
+    """A dataclass representing an audio track with playback control functionality.
 
+    This class manages audio track state including play/pause, mute/unmute, volume control,
+    and provides methods to retrieve audio chunks and wait for track completion.
+
+    Attributes:
+        name (str): The name identifier of the track.
+        paused (bool): Whether the track is currently paused.
+        muted (bool): Whether the track is currently muted.
+        volume (float): The volume level of the track as a decimal.
+        realtime (bool): Whether the track operates in realtime mode.
+    """
     name: str
     paused: bool
     muted: bool
@@ -38,7 +47,12 @@ class Track:
     def __post_init__(
         self, _signal: Event | None, _stream: PlaybackCallbackGeneratorType | None
     ):
-        """Automatically assigns the internal private fields."""
+        """Automatically assigns the internal private fields.
+
+        Args:
+            _signal (Event | None): Internal signaling for when the `Track` will finish.
+            _stream (PlaybackCallbackGeneratorType | None): Internal audio data stream.
+        """
         self._signal = _signal
         self._stream = _stream
 
@@ -58,30 +72,30 @@ class Track:
         """Unmutes the track. Does nothing if the track is not muted."""
         self.muted = False
 
-    def wait(self):
+    def wait(self) -> bool | Coroutine[Any, Any, Literal[True]]:
+        """Wait until `Track` is finished.
+
+        Returns:
+            bool | Coroutine[Any, Any, Literal[True]]: Either a synchronous or asynchronous return result of `Event.wait`
+        """
         return self._signal.wait()
 
     def chunk(self, num_frames: int) -> ndarray:
         """Retrieves the latest audio chunk.
 
-        Arg
+        Args:
             num_frames (int): The number of frames per chunk.
-
-        Raises:
-            ValueError: Underlying audio stream does not exist.
 
         Returns:
             ndarray: A audio chunk represented as a numpy array.
         """
         return asarray(self._stream.send(num_frames))
-    
-    
+
+
 class TrackMapping(Dict[str, Track]):
-    """Container for Track access and control
-    """
+    """Container for Track access and control."""
     def clear(self):
-        """Removes all current tracks. An alert is sent indicating all the tracks are finished.
-        """
+        """Removes all current tracks. An alert is sent indicating all the tracks are finished."""
         for track in self.values():
             track._signal.set()
         super().clear()

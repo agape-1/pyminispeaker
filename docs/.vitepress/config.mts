@@ -23,9 +23,9 @@ export default defineConfigWithTheme<ThemeConfig>({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [ // TODO: Resolve navigation header
-      { text: 'API Documentation', link: '/building/source' }, // TODO: Configure links for these invalid navigation items
-      { text: 'Quickstart', link: '/building/source' },
-      { text: 'Examples', link: '/building/source' }
+      { text: 'API Documentation', link: '/api-documentation' }, // TODO: Configure links for these invalid navigation items
+      { text: 'Quickstart', link: '/getting-started/00-start' },
+      { text: 'Examples', link: '/examples/text-to-speech/chat-completions' }
     ],
     sidebar: generateSidebar(vitePressSidebarOptions),
     search: {

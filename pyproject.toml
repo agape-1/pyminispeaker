@@ -47,3 +47,15 @@ build-backend = "uv_build"
 docs = [
     "pydoc-markdown>=4.8.2",
 ]
+lint = [
+    "pydoclint>=0.5.11",
+    "ruff>=0.12.1",
+]
+
+[tool.ruff.lint]
+select = ["D"]
+
+ignore = ["D100", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

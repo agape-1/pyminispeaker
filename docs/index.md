@@ -9,10 +9,10 @@ hero:
   actions:
     - theme: brand
       text:  Quickstart
-      link: /getting-started # TODO: Implement 'getting-started.md'
+      link: /getting-started/00-start # TODO: Implement 'getting-started.md'
     - theme: alt
       text: Usage Examples
-      link: /examples # TODO: Implement `examples.md`
+      link: /examples/text-to-speech/chat-completions # TODO: Implement `examples.md`
 
 features:
   - title: Volume Mixer

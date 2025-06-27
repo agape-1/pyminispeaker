@@ -21,7 +21,7 @@ renderer:
   output_directory: ..
   content_directory_name: docs
   markdown:
-    add_method_class_prefix: true  
+    add_method_class_prefix: true
     header_level_by_type:
       Class: 2 # # Class
       Method: 4 # ## Method
@@ -40,7 +40,7 @@ renderer:
       type: github # or gitlab, bitbucket, gitea
       repo: agape-1/pyminispeaker
       use_branch: true # Use branch name instead of commit SHA
-    source_position: before signature # or "before signature"
+    source_position: after signature # or "before signature"
     source_format: '<p style="text-align: right"><a style="text-decoration:none;" href="{url}">[🔗]</a></p>' # Add HTML to customize styling
   pages:
     - title: API Documentation
