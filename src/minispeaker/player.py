@@ -259,7 +259,7 @@ class Speakers:
             speaker._on_exit()  # Exit now
             atexit.register(speaker._on_exit)  # Register for later
         """
-        def close(stopped: Event, tracks: TrackMapping, PlaybackDevice: PlaybackDevice):
+        def close(stopped: Event, tracks: TrackMapping, PlaybackDevice: ConcurrentPlaybackDevice):
             """Release all resources and any signaling.
             Args:
                 stopped (Event): Signal for when the Speaker is playing any track.
