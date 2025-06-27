@@ -11,7 +11,7 @@ from threading import Event as ThreadEvent
 from collections import deque
 
 
-async def to_thread(func, /, *args, **kwargs): # Python 3.8 does not have `to_thread`: Copied from https://github.com/python/cpython/blob/main/Lib/asyncio/threads.py#L12
+async def to_thread(func, /, *args, **kwargs):  # Python 3.8 does not have `to_thread`: Copied from https://github.com/python/cpython/blob/main/Lib/asyncio/threads.py#L12
     """Asynchronously run function *func* in a separate thread.
 
     Any *args and **kwargs supplied for this function are directly passed
@@ -34,7 +34,7 @@ S = TypeVar('S')
 E = TypeVar('E')
 
 
-def poll_async_generator(stream: AsyncGenerator[T, S], default_empty_factory: Callable[[], E] = lambda : None, loop: Optional[AbstractEventLoop] = None) -> Generator[T | E, S, None]:
+def poll_async_generator(stream: AsyncGenerator[T, S], default_empty_factory: Callable[[], E] = lambda: None, loop: Optional[AbstractEventLoop] = None) -> Generator[T | E, S, None]:
     """Converts a asychronous generator `stream` into a synchronous one via polling.
 
     Args:
