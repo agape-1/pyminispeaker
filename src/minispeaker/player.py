@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from asyncio import AbstractEventLoop
 from typing_extensions import Callable, Annotated, Optional, Generator, AsyncGenerator
+from collections.abc import AsyncIterator, Iterator
 from types import AsyncGeneratorType, GeneratorType
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, PlaybackCallbackGeneratorType
@@ -22,7 +23,7 @@ from atexit import register
 from minispeaker.devices import default_speaker, ConcurrentPlaybackDevice
 from minispeaker.tracks import Track
 from minispeaker.processor.mixer import master_mixer
-from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad
+from minispeaker.processor.pipes import AudioPipeline, stream_sentinel, stream_handle_mute, stream_numpy_pcm_memory, stream_async_buffer, stream_bytes_to_array, stream_match_audio_channels, stream_num_frames, stream_pad, stream_as_generator, stream_async_as_generator
 from miniaudio import (
     Devices,
     stream_with_callbacks
@@ -227,8 +228,8 @@ class Speakers:
             TypeError: The audio input is not valid and must be a correct file path.
         """
 
-        if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
-            raise TypeError(f"{audio} is not a string or a generator")
+        if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType, Iterator, AsyncIterator)):
+            raise TypeError(f"{audio} is not a string, iterator, or a generator")
 
         if name is None:
             name = audio
