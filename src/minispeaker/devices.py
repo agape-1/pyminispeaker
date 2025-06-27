@@ -79,12 +79,21 @@ class MaDeviceState(Enum):
 
 
 class ConcurrentPlaybackDevice(PlaybackDevice):
-    """Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and
-    thread-safe concurrency.
+    """Modified miniaudio `PlaybackDevice` class with accessible `ma_device_state` and thread-safe concurrency.
 
     Args:
+        *args: Variable length argument list passed to parent `PlaybackDevice`.
         stopped (Event): Used to signal when a `PlaybackDevice` is finished.
+        **kwargs: Arbitrary keyword arguments passed to parent `PlaybackDevice`.
 
+    Attributes:
+        state (MaDeviceState): Current state of the audio device.
+        volume (float | None): Volume level of the PlaybackDevice (0.0 to 1.0+).
+        starting (bool): True if the device is currently starting.
+        stopping (bool): True if the device is currently stopping.
+        stopped (bool): True if the device has stopped.
+        closed (bool): True if the device is uninitialized/closed.
+        started (bool): True if the device has started and is running.
     """
 
     def __init__(self, *args, stopped: Event, **kwargs):
