@@ -149,6 +149,12 @@ class Speakers:
             ArrayLike: An audio chunk 
         """
         processor = AudioPipeline() # AudioPipeline chaining is AI-generated and modified for correctness
+        if isinstance(audio, AsyncIterator):
+            audio = stream_async_as_generator(audio)
+            next(audio)
+        if isinstance(audio, Iterator):
+            audio = stream_as_generator(audio)
+            next(audio)
         if isinstance(audio, str):
             processor >>= (stream_numpy_pcm_memory, {
                 "output_format": self.sample_format,
