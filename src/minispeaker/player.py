@@ -195,7 +195,7 @@ class Speakers:
 
     def play(
         self,
-        audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int],
+        audio: str | Iterator[memoryview | bytes | ArrayLike] | AsyncIterator[memoryview | bytes| ArrayLike] | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int],
         name: Annotated[Optional[str], "Custom name for the audio."] = None,
         volume: Annotated[Optional[float], "The initial track volume."] = None,
         paused: Annotated[Optional[bool], "Should the audio not play immediately?"] = False,
@@ -219,7 +219,7 @@ class Speakers:
                 speaker.wait() # Wait until all the tracks are finished
 
         Args:
-            audio (str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int]): Audio file path or audio stream. The audio stream must be pre-initialized via next() and yield audio chunks as some form of an array. If you send() a number into the generator rather than just using next() on it, you'll get that given number of frames, instead of the default configured amount. See memory_stream() for an example.
+            audio (str | Iterator[memoryview  |  bytes  |  ArrayLike] | AsyncIterator[memoryview  |  bytes |  ArrayLike] | Generator[memoryview  |  bytes  |  ArrayLike, int, None] | AsyncGenerator[memoryview  |  bytes  |  ArrayLike, int]): Audio file path or audio stream. The audio stream can either be any form of async/sync iterator or generator. Keep in mind that for generators, they must be pre-initialized via next() and yield audio chunks as some form of an array, to allow the ability to send() a number into the generator and receive a corresponding number of audio frames, instead of the unknown pre-set amount. See memory_stream() for an example.
             name (str): A custom name which will be accessible by self[name]. Defaults to `audio`.
             volume (float): The individual Track's volume. Defaults to `self.volume`.
             paused (bool): Should the audio be immediately paused before playback? Defaults to `False`.
