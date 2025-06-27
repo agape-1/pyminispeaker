@@ -1,6 +1,21 @@
 # Typing
 from __future__ import annotations
-from typing_extensions import Concatenate, ParamSpec, Buffer, Generator, Union, Callable, AsyncGenerator, Any, TypeVar, Tuple, TypeAlias, Dict, Iterable, AsyncIterable
+from typing_extensions import (
+    Concatenate,
+    ParamSpec,
+    Buffer,
+    Generator,
+    Union,
+    Callable,
+    AsyncGenerator,
+    Any,
+    TypeVar,
+    Tuple,
+    TypeAlias,
+    Dict,
+    Iterable,
+    AsyncIterable,
+)
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, DitherMode, FramesType
@@ -19,7 +34,7 @@ from miniaudio import (
 )
 import numpy as np
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def stream_async_as_generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, None]:
@@ -29,13 +44,16 @@ def stream_async_as_generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, N
         iterable (AsyncIterable[T]): Any asychronous iterator audio stream.
 
     Returns:
-        AsyncGenerator[T, None]: An identical `iterable` audio stream as a asychronous generator. 
+        AsyncGenerator[T, None]: An identical `iterable` audio stream as a asychronous generator.
     """
+
     async def generator(iterable: AsyncIterable[T]) -> AsyncGenerator[T, None]:
         yield b""
         async for value in iterable:
             yield value
+
     return generator(iterable)
+
 
 def stream_as_generator(iterable: Iterable[T]) -> Generator[T, None, None]:
     """Convenience function that returns a wrapped generator from an `iterable`.
@@ -43,12 +61,16 @@ def stream_as_generator(iterable: Iterable[T]) -> Generator[T, None, None]:
     Args:
         iterable (Iterable[T]): Any iterator audio stream.
 
-    Yields:
+    Returns:
         Generator[T, None, None]: An identical `iterable` audio stream as a generator.
+
+    Yields:
+        T: Any value from `iterable`
     """
     yield b""
     for value in iterable:
         yield value
+
 
 def memory_stream(arr: ndarray) -> PlaybackCallbackGeneratorType:
     """Converts a numpy array into a stream.
@@ -79,6 +101,7 @@ def stream_numpy_pcm_memory(
     dither: DitherMode = DitherMode.NONE,
 ) -> PlaybackCallbackGeneratorType:
     """Convenience function that returns a generator to decode and stream any source of encoded audio data.
+
     Stream result is chunks of raw PCM samples as a numpy array.
     If you send() a number into the generator rather than just using next() on it, you'll get that given number of frames,
     instead of the default configured amount. This is particularly useful to plug this stream into an audio device callback
@@ -105,86 +128,136 @@ def stream_numpy_pcm_memory(
     numpy_pcm = np.array(audio.samples, dtype=np.int16).reshape(-1, nchannels)
     return memory_stream(numpy_pcm)
 
-def stream_async_with_callbacks(sample_stream: AsyncGenerator[bytes | ArrayLike, int],
-                          progress_callback: Union[Callable[[int], None], None] = None,
-                          frame_process_method: Union[Callable[[FramesType], FramesType], None] = None,
-                          end_callback: Union[Callable, None] = None) -> PlaybackCallbackGeneratorType:
-    """Convenience synchronous generator function to add callback and processing functionality, allowing synchronous playback from a asynchronous stream. You can specify :
-    A callback function that gets called during play and takes an int for the number of frames played.
-    A function that can be used to process raw data frames before they are yielded back (takes an array.array or bytes, returns an array.array or bytes) *Note: if the processing method is slow it will result in audio glitchiness
-    """ 
-    blank_audio_if_pending= poll_async_generator(sample_stream, default_empty_factory=lambda : b"")
-    next(blank_audio_if_pending)
-    return stream_with_callbacks(sample_stream=blank_audio_if_pending, progress_callback=progress_callback, frame_process_method=frame_process_method, end_callback=end_callback)
 
-def stream_num_frames(sample_stream: Generator[ArrayLike, Any, None]) -> PlaybackCallbackGeneratorType:
-    """Convenience generator function with dynamic audio buffer management to guarantee a certain audio chunk size per iteration. 
+def stream_async_with_callbacks(
+    sample_stream: AsyncGenerator[bytes | ArrayLike, int],
+    progress_callback: Union[Callable[[int], None], None] = None,
+    frame_process_method: Union[Callable[[FramesType], FramesType], None] = None,
+    end_callback: Union[Callable, None] = None,
+) -> PlaybackCallbackGeneratorType:
+    """Convenience synchronous generator function to add callback and processing functionality, allowing synchronous playback from a asynchronous stream.
+
+    You can specify:
+    A callback function that gets called during play and takes an int for the number of frames played.
+    A function that can be used to process raw data frames before they are yielded back (takes an array.array or bytes, returns an array.array or bytes) *Note: if the processing method is slow it will result in audio glitchiness.
+
+
+    Args:
+        sample_stream (AsyncGenerator[bytes  |  ArrayLike, int]): _description_
+        progress_callback (Union[Callable[[int], None], None], optional): _description_. Defaults to None.
+        frame_process_method (Union[Callable[[FramesType], FramesType], None], optional): _description_. Defaults to None.
+        end_callback (Union[Callable, None], optional): _description_. Defaults to None.
+
+    Returns:
+        PlaybackCallbackGeneratorType: _description_
+    """
+    blank_audio_if_pending = poll_async_generator(
+        sample_stream, default_empty_factory=lambda: b""
+    )
+    next(blank_audio_if_pending)
+    return stream_with_callbacks(
+        sample_stream=blank_audio_if_pending,
+        progress_callback=progress_callback,
+        frame_process_method=frame_process_method,
+        end_callback=end_callback,
+    )
+
+
+def stream_num_frames(
+    sample_stream: Generator[ArrayLike, Any, None],
+) -> PlaybackCallbackGeneratorType:
+    """Convenience generator function with dynamic audio buffer management to guarantee a certain audio chunk size per iteration.
+
     If you send() a number into the generator rather than just using next() on it, you'll get that given number of frames, instead of the default configured amount. This is particularly useful to plug this stream into an audio device callback that wants a variable number of frames per call.
 
     Args:
         sample_stream (Generator[ArrayLike, Any, None]): Any ArrayLike generator.
 
     Returns:
-        PlaybackCallbackGeneratorType: 
+        PlaybackCallbackGeneratorType:
 
     Yields:
-        ArrayLike: An audio chunk 
+        ArrayLike: An audio chunk
     """
+
     def send():
         return np.asarray(sample_stream.send(num_frames))
-    
+
     def next():
         return np.asarray(sample_stream.__next__())
+
     num_frames = yield b""
-    get = send if hasattr(sample_stream, "send") else next # Extra compatibility for iterator only audio.
+    get = (
+        send if hasattr(sample_stream, "send") else next
+    )  # Extra compatibility for iterator only audio.
     audio = get()
     while True:
         try:
-            if len(audio) >= num_frames: # TODO: Find someway to add a 'safety' buffer of double its chunks for smooth playback.
+            if (
+                len(audio) >= num_frames
+            ):  # TODO: Find someway to add a 'safety' buffer of double its chunks for smooth playback.
                 piece, audio = audio[:num_frames], audio[num_frames:]
                 num_frames = yield piece
             else:
                 more = get()
-                audio = np.concatenate((audio.ravel(), more.ravel())).reshape((-1, audio.shape[1]))
+                audio = np.concatenate((audio.ravel(), more.ravel())).reshape(
+                    (-1, audio.shape[1])
+                )
         except StopIteration:
-            yield audio[:min(len(audio), num_frames)] # Give out remaining audio, but never give audio more than it has requested
+            yield audio[
+                : min(len(audio), num_frames)
+            ]  # Give out remaining audio, but never give audio more than it has requested
             break
 
-def stream_match_audio_channels(sample_stream: Generator[ArrayLike, int, None],
-                                channels: int) -> Generator[ndarray, int, None]:
+
+def stream_match_audio_channels(
+    sample_stream: Generator[ArrayLike, int, None], channels: int
+) -> Generator[ndarray, int, None]:
     """Convenience generator function to automatically reformat any `sample_stream` data as a numpy channeled array.
 
     Args:
         sample_stream (Generator[ArrayLike, int, None]): Any ArrayLike generator.
         channels (int): _description_
 
-    Yields:
+    Returns:
         Generator[ndarray, int, None]: Audio data formatted with the correct `channels`.
     """
     num_frames = yield b""
     while True:
         try:
-            audio = sample_stream.send(num_frames) #Modified from miniaudio.stream_with_callbacks()
+            audio = sample_stream.send(
+                num_frames
+            )  # Modified from miniaudio.stream_with_callbacks()
             num_frames = yield np.asarray(audio).reshape((-1, channels))
         except StopIteration:
             break
 
-async def stream_async_buffer(sample_stream: AsyncGenerator[ArrayLike, None], max_buffer_chunks: int) -> AsyncGenerator[ArrayLike, None]:
-    """Asynchronous convenience generator function to prefetch audio for continuous playback. 
+
+async def stream_async_buffer(
+    sample_stream: AsyncGenerator[ArrayLike, None], max_buffer_chunks: int
+) -> AsyncGenerator[ArrayLike, None]:
+    """Asynchronous convenience generator function to prefetch audio for continuous playback.
 
     Args:
         sample_stream (AsyncGenerator[ArrayLike, None]): Any asynchronous audio generator.
         max_buffer_chunks (int): The prefetched audio size will not exceed by this amount.
-    Yields:        realtime (bool): Should the stream prioritize returning the most recent audio data over the later ones? Default to False.
+
+    Returns:
         AsyncGenerator[ArrayLike, None]: Identical audio stream with buffer cache.
+
+    Yields:
+        ArrayLike: Identical audio data.
     """
     STREAM_FINISHED = None
     audio_ready = Event()
+
     async def background_stream():
         try:
             async for audio in sample_stream:
                 await queue.put(audio)
-                if not audio_ready.is_set() and queue.qsize() == max_buffer_chunks-1: # When the audio queue first starts, buffer slightly to prevent choppiness on first chunk playback
+                if (
+                    not audio_ready.is_set() and queue.qsize() == max_buffer_chunks - 1
+                ):  # When the audio queue first starts, buffer slightly to prevent choppiness on first chunk playback
                     audio_ready.set()
         finally:
             await queue.put(STREAM_FINISHED)
@@ -192,34 +265,40 @@ async def stream_async_buffer(sample_stream: AsyncGenerator[ArrayLike, None], ma
     queue = Queue(maxsize=max_buffer_chunks)
     create_task(background_stream())
     await audio_ready.wait()
-    while (audio := await queue.get()) is not STREAM_FINISHED: # Modified from https://stackoverflow.com/a/63974948
+    while (
+        audio := await queue.get()
+    ) is not STREAM_FINISHED:  # Modified from https://stackoverflow.com/a/63974948
         yield audio
 
-def stream_bytes_to_array(byte_stream: Generator[Buffer, int, None],
-                          dtype: DTypeLike) -> Generator[ndarray, int, None]:
-    """Convenience generator function to automatically convert any `byte_stream` into a numpy compatible sample stream. 
+
+def stream_bytes_to_array(
+    byte_stream: Generator[Buffer, int, None], dtype: DTypeLike
+) -> Generator[ndarray, int, None]:
+    """Convenience generator function to automatically convert any `byte_stream` into a numpy compatible sample stream.
 
     Args:
         byte_stream (Generator[Buffer, int, None]): Any Buffer generator.
         dtype (DTypeLike): The underlying audio sample format as a numpy dtype.
 
-    Yields:
+    Returns:
         Generator[ndarray, int, None]: Audio data formatted as a numpy array.
     """
     # TODO: This is a near copy of `stream_match_audio_channels()`. Consider making this less DRY?
     num_frames = yield b""
     while True:
         try:
-            audio = byte_stream.send(num_frames) 
-            num_frames = yield np.frombuffer(audio, dtype=dtype)  # If ArrayLike is passed here, then lossy compression occurs at worse-case.
+            audio = byte_stream.send(num_frames)
+            num_frames = yield np.frombuffer(
+                audio, dtype=dtype
+            )  # If ArrayLike is passed here, then lossy compression occurs at worse-case.
         except StopIteration:
             break
 
-def stream_sentinel() -> Generator[ArrayLike, int, None]:
-    """Convenience generator function to simply yield nothing. Typically used agaisnt race conditions when track audio data is requested
-    before the complete audio stream generator is initialized.
 
-    Yields:
+def stream_sentinel() -> Generator[ArrayLike, int, None]:
+    """Convenience generator function to simply yield nothing. Typically used agaisnt race conditions when track audio data is requested before the complete audio stream generator is initialized.
+
+    Returns:
         Generator[ArrayLike, int, None]: Empty audio data
     """
     num_frames = yield b""
@@ -229,24 +308,27 @@ def stream_sentinel() -> Generator[ArrayLike, int, None]:
         except StopIteration:
             break
 
-def stream_pad(ndarray_stream: Generator[ndarray, int, None], channels: int) -> Generator[ndarray, int, None]:
-    """When calculating np.average to mix multiple audio streams,
-    the function assumes all audio streams are identical in shape.
+
+def stream_pad(
+    ndarray_stream: Generator[ndarray, int, None], channels: int
+) -> Generator[ndarray, int, None]:
+    """When calculating np.average to mix multiple audio streams, the function assumes all audio streams are identical in shape.
+
     This is the case until an audio stream is nearing its end, whereby
     it returns an trimmed audio stream. pad() ensures that the
     trimmed audio stream is padded.
 
     Args:
-        sample_stream (Generator[ndarray, int, None]): Any synchronous audio generator whose data is formatted as a numpy array.
+        ndarray_stream (Generator[ndarray, int, None]): Any synchronous audio generator whose data is formatted as a numpy array.
         channels (int): Number of audio channels.
 
-    Yields:
+    Returns:
         Generator[ndarray, int, None]:formatted as a numpy array.
     """
     num_frames = yield b""
     while True:
         try:
-            audio = ndarray_stream.send(num_frames) 
+            audio = ndarray_stream.send(num_frames)
             if not (audio.ndim and audio.size):
                 num_frames = yield np.zeros((num_frames, channels))
             elif audio.shape[0] != num_frames:
@@ -258,102 +340,118 @@ def stream_pad(ndarray_stream: Generator[ndarray, int, None], channels: int) -> 
         except StopIteration:
             break
 
-def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Track) -> Generator[ArrayLike, int, None]:
+
+def stream_handle_mute(
+    sample_stream: Generator[ArrayLike, int, None], track: Track
+) -> Generator[ArrayLike, int, None]:
     """Convenience generator function to purposely throw out audio data if `track` is muted, creating the effect of played but unheard audio.
 
     Args:
         sample_stream (Generator[ArrayLike, int, None]): Any synchronous audio generator
         track (Track): Any `Track` class.
 
-    Yields:
+    Returns:
         Generator[ArrayLike, int, None]: Audio data
     """
     num_frames = yield b""
     while True:
         try:
-            audio = sample_stream.send(num_frames) 
+            audio = sample_stream.send(num_frames)
             if track.muted:
-                num_frames = yield np.zeros(np.shape(audio)) # NOTE: This is faster than `np.zeros_like(x)`, verify this by modifying the question `timeit` script and testing it agaisnt `np.zeroes(np.shape(audio))` from https://stackoverflow.com/questions/27464039/why-the-performance-difference-between-numpy-zeros-and-numpy-zeros-like
+                num_frames = yield np.zeros(
+                    np.shape(audio)
+                )  # NOTE: This is faster than `np.zeros_like(x)`, verify this by modifying the question `timeit` script and testing it agaisnt `np.zeroes(np.shape(audio))` from https://stackoverflow.com/questions/27464039/why-the-performance-difference-between-numpy-zeros-and-numpy-zeros-like
             else:
                 num_frames = yield audio
         except StopIteration:
             break
 
-In = TypeVar('In') 
-Out = TypeVar('Out')
-Params = ParamSpec('P')
+
+In = TypeVar("In")
+Out = TypeVar("Out")
+Params = ParamSpec("P")
 AudioGenerator = Union[Generator[Out, int, None], AsyncGenerator[Out, None]]
 GeneratorFactory: TypeAlias = Callable[Concatenate[In, Params], AudioGenerator]
 Args: TypeAlias = Tuple[Any, ...]
 Kwargs: TypeAlias = Dict[str, Any]
 Transform: TypeAlias = Tuple[GeneratorFactory, Args, Kwargs]
 
-class AudioPipeline: # NOTE: All of AudioPipeline have been AI-generated and tested + verified for correctness
+
+class AudioPipeline:  # NOTE: All of AudioPipeline have been AI-generated and tested + verified for correctness
+    """Immutable pipeline that preserves order and chains audio processing transformations.
+
+    Creates a composable pipeline of generator transformations that can be applied to any source.
+    Each transformation in the pipeline receives the output of the previous transformation,
+    creating a lazy evaluation chain that processes audio data efficiently.
+
+    Each generator must contain an initilization yield as each of them will be started in the pipeline.
+
+    Args:
+        *transforms: Variable number of (function, args, kwargs) tuples representing
+            transformations to apply. Each function should return an AudioGenerator with
+            an initialization yield. Typically not called directly - use >> operator instead.
+
+    Attributes:
+        transforms (tuple): Immutable tuple of (function, args, kwargs) transformations
+            that define the processing pipeline order.
+
+    Examples:
+        Create an audio generator with initialization and send capability:
+
+        >>> def amplify(source, factor=2):
+        ...     # Initialization
+        ...     current_factor = factor
+        ...     yield  # Initialization yield
+        ...
+        ...     # Main processing loop
+        ...     for sample in source:
+        ...         # Can receive new amplification factor via send()
+        ...         new_factor = yield sample * current_factor
+        ...         if new_factor is not None:
+        ...             current_factor = new_factor
+
+        Create a pipeline using the >> operator:
+
+        >>> pipeline = (AudioPipeline()
+        ...     >> (amplify, 2)
+        ...     >> bandpass_filter
+        ...     >> compressor)
+
+        Apply to audio stream:
+
+        >>> audio_gen = pipeline(audio_samples)
+
+        Compile for reuse:
+
+        >>> process = pipeline.compile()
+        >>> output = list(process(another_stream))
+    """
 
     def __init__(self, *transforms: Transform):
-        """
-            Immutable pipeline that preserves order and chains audio processing transformations.
-
-            Creates a composable pipeline of generator transformations that can be applied to any source.
-            Each transformation in the pipeline receives the output of the previous transformation,
-            creating a lazy evaluation chain that processes audio data efficiently. 
-
-            Each generator must contain an initilization yield as each of them will be started in the pipeline.
-
-            Args:
-                *transforms: Variable number of (function, args, kwargs) tuples representing
-                    transformations to apply. Each function should return an AudioGenerator with
-                    an initialization yield. Typically not called directly - use >> operator instead.
-
-            Usage:
-                # Example audio generator with initialization and send capability
-                def amplify(source, factor=2):
-                    # Initialization
-                    current_factor = factor
-                    yield  # Initialization yield
-                    
-                    # Main processing loop
-                    for sample in source:
-                        # Can receive new amplification factor via send()
-                        new_factor = yield sample * current_factor
-                        if new_factor is not None:
-                            current_factor = new_factor
-                
-                # Create a pipeline using the >> operator
-                pipeline = (AudioPipeline()
-                    >> (amplify, 2)
-                    >> bandpass_filter
-                    >> compressor)
-
-                # Apply to audio stream
-                audio_gen = pipeline(audio_samples)
-
-                # Compile for reuse
-                process = pipeline.compile()
-                output = list(process(another_stream))
-        """
         self.transforms = transforms
 
-    def __rshift__(self, transform: Union[GeneratorFactory, Transform]) -> 'AudioPipeline':
-        """
-        Add a transformation to the pipeline using the >> operator.
+    def __rshift__(
+        self, transform: Union[GeneratorFactory, Transform]
+    ) -> "AudioPipeline":
+        """Add a transformation to the pipeline using the >> operator.
 
         Creates a new Pipeline instance with the additional transformation appended,
         preserving immutability. The transformation should be a generator function
         that yields once for initialization and can accept integer values via send().
 
         Args:
-            transform: Either a generator function or a tuple of (generator_function, *args, **kwargs).
-                - If callable: Applied with no additional arguments
-                - If tuple: First element is the generator function, remaining elements are arguments
-                - If last tuple element is a dict, it's treated as kwargs
+            transform (Union[GeneratorFactory,Transform]): Either a generator function or a tuple of (generator_function, *args, **kwargs).
 
-            Generator functions in the pipeline first positional argument must be either:
-                - The initial `source` passed to the pipeline (for the first transform)
-                - The output from the previous transform in the chain (for subsequent transforms)
+        If callable: Applied with no additional arguments
+        If tuple: First element is the generator function, remaining elements are arguments
+        If last tuple element is a dict, it's treated as kwargs
+
+        Generator functions in the pipeline first positional argument must be either:
+            - The initial `source` passed to the pipeline (for the first transform)
+            - The output from the previous transform in the chain (for subsequent transforms)
 
         Returns:
-            Pipeline: New Pipeline instance with the transformation added.
+            AudioPipeline: New Pipeline instance with the transformation added.
 
         Raises:
             TypeError: If transform is neither callable nor tuple.
@@ -371,16 +469,14 @@ class AudioPipeline: # NOTE: All of AudioPipeline have been AI-generated and tes
             raise TypeError(f"Generator {transform} must be callable or tuple")
 
     def __call__(self, source: In) -> AudioGenerator:
-        """
-        Apply the pipeline to a source.
+        """Apply the pipeline to a source.
 
         Executes all transformations in order, passing the output of each
         transformation as input to the next. Each generator will be `GEN_STARTED` by having their first
         yield consumed before processing begins.
 
         Args:
-            source: The input to process through the pipeline. Can be any type
-                that the first generator in the chain accepts (iterable, generator, etc).
+            source (In): The input to process through the pipeline. Can be any type that the first generator in the chain accepts (iterable, generator, etc).
 
         Returns:
             AudioGenerator: Curried `AudioGenerator` of `transforms`
@@ -389,26 +485,24 @@ class AudioPipeline: # NOTE: All of AudioPipeline have been AI-generated and tes
         result = source
         for func, args, kwargs in self.transforms:
             result = func(result, *args, **kwargs)
-            if isinstance(result, GeneratorType): # Ignore if it's `AsyncGeneratorType`
+            if isinstance(result, GeneratorType):  # Ignore if it's `AsyncGeneratorType`
                 next(result)  # Consume initialization yield
         return result
 
     def compile(self) -> GeneratorFactory:
-        """
-        Compile the pipeline into a reusable generator factory.
-        
+        """Compile the pipeline into a reusable generator factory.
+
         Returns a function that can be called multiple times with different
         sources. Each call will create a new chain of initialized generators
         that process the input and support send() communication.
-        
+
         Returns:
             GeneratorFactory: Function that returns a curried `AudioGenerator` of `transforms`
         """
         return self.__call__
 
-    def __repr__(self):
-        """
-        Return a string representation of the pipeline for debugging.
+    def __repr__(self) -> str:
+        """Return a string representation of the pipeline for debugging.
 
         Shows the sequence of transformations in a readable format using >> notation.
         Functions with arguments are displayed with ellipsis to indicate parameters.
