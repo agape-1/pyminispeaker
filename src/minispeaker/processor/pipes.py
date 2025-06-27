@@ -396,6 +396,7 @@ class AudioPipeline:  # NOTE: All of AudioPipeline have been AI-generated and te
             that define the processing pipeline order.
 
     Examples:
+        ```python
         Create an audio generator with initialization and send capability:
 
         >>> def amplify(source, factor=2):
@@ -425,6 +426,7 @@ class AudioPipeline:  # NOTE: All of AudioPipeline have been AI-generated and te
 
         >>> process = pipeline.compile()
         >>> output = list(process(another_stream))
+        ```
     """
 
     def __init__(self, *transforms: Transform):

@@ -261,19 +261,20 @@ class Speakers:
 
         Examples:
             Basic usage with context manager:
-
+            ```python
             >>> with Speaker(name="My device speakers") as speaker:
             ...     speaker.play("track.mp3", 'special name')
             ...     speaker.play("test.mp3")  # Both track.mp3 and test.mp3 are playing
             ...     speaker['special name'].wait()  # Wait until 'special name', or 'track.mp3' is finished. 'test.mp3' might still be playing.
             ...     speaker.wait()  # Wait until all the tracks are finished
-
+            ```
             Manual usage:
-
+            ```python
             >>> speaker = Speakers(name="My device speakers")
             >>> speaker.play("track.mp3")
             >>> speaker.wait()  # Wait until track is finished
             >>> speaker.stop()
+            ```
         """
         if isinstance(audio, AsyncIterator):
             audio = stream_async_as_generator(audio)
