@@ -39,7 +39,7 @@ SAMPLE_FORMAT = SampleFormat.SIGNED16
 ```
 
 > [!WARNING]  
-> Selecting the incorrect sample rate and format corresponding to the audio stream may result in non-working audio playback.
+> Selecting the incorrect sample rate and format  may result in non-working audio playback.
 
 4. Pass the audio stream into `Speaker` with `SAMPLE_RATE` and `SAMPLE_FORMAT`.
 ```python
