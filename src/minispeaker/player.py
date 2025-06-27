@@ -134,7 +134,7 @@ class Speakers:
                 Thread(target=self._PlaybackDevice.stop, daemon=True).start()
         return alert_and_remove_track
 
-    def _unify_audio_types(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
+    def _curried_audio_gen(self, audio: str | Generator[memoryview | bytes | ArrayLike, int, None] | AsyncGenerator[memoryview | bytes | ArrayLike, int], loop: AbstractEventLoop, track: Track) -> PlaybackCallbackGeneratorType:
         """Processes a variety of different audio formats by converting them to a synchronous generator.
 
         Args:
@@ -176,7 +176,7 @@ class Speakers:
             >> (stream_with_callbacks, {"end_callback": self._handle_audio_end(track.name)}))
         return processor(audio)
 
-    def _play(self, loop: AbstractEventLoop, audio: str | Generator[ArrayLike, int, None] | AsyncGenerator[ArrayLike, int], name: str):
+    def _begin_playback(self, loop: AbstractEventLoop, audio: str | Generator[ArrayLike, int, None] | AsyncGenerator[ArrayLike, int], name: str):
         """Internal function to properly manipulate audio stream data for pause, mute, and wait functionality.
 
         Args:
@@ -186,7 +186,7 @@ class Speakers:
         """
         track = self.tracks[name]
         set_event_loop(loop)
-        track._stream = audio = self._unify_audio_types(audio, loop, track)
+        track._stream = audio = self._curried_audio_gen(audio, loop, track)
 
         mixer = master_mixer(tracks=self.tracks,
                                 paused=lambda: self.paused, 
@@ -247,7 +247,7 @@ class Speakers:
         )
         self.tracks[name] = track
 
-        process_audio = Thread(target=self._play, args=(get_event_loop(), audio, name), daemon=True)
+        process_audio = Thread(target=self._begin_playback, args=(get_event_loop(), audio, name), daemon=True)
         process_audio.start()
 
     @property
