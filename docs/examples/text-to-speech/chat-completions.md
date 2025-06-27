@@ -1,6 +1,6 @@
 # Chat Completions
 
-This example will show how to play back text to speech from a Chat Completions API via `pyminispeaker`.
+This example will show how to play  text to speech via the Chat Completions API and `pyminispeaker`.
 
 ## Instructions
 
