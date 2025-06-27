@@ -166,7 +166,8 @@ class Speakers:
             >> (stream_match_audio_channels, self.channels)
             >> stream_num_frames
             >> (stream_pad, self.channels)
-            >> (stream_handle_mute, track))
+            >> (stream_handle_mute, track)
+            >> (stream_with_callbacks, {"end_callback": self._handle_audio_end(track.name)}))
         return processor(audio)
 
     def _play(self, loop: AbstractEventLoop, audio: str | Generator[ArrayLike, int, None] | AsyncGenerator[ArrayLike, int], name: str):
@@ -179,11 +180,7 @@ class Speakers:
         """
         track = self.tracks[name]
         set_event_loop(loop)
-        audio = self._unify_audio_types(audio, loop, track)
-        audio_controller = stream_with_callbacks(sample_stream=audio, end_callback=self._handle_audio_end(name))
-        next(audio_controller)
-
-        track._stream = audio_controller
+        track._stream = audio = self._unify_audio_types(audio, loop, track)
 
         mixer = master_mixer(tracks=self.tracks,
                                 paused=lambda: self.paused, 
