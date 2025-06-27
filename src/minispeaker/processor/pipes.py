@@ -4,6 +4,7 @@ from typing_extensions import Concatenate, ParamSpec, Buffer, Generator, Union, 
 from numpy import ndarray
 from numpy.typing import ArrayLike, DTypeLike
 from miniaudio import SampleFormat, DitherMode, FramesType
+from types import GeneratorType
 
 # Helpers
 from asyncio import create_task, Queue
@@ -281,7 +282,7 @@ def stream_handle_mute(sample_stream: Generator[ArrayLike, int, None], track: Tr
 In = TypeVar('In') 
 Out = TypeVar('Out')
 Params = ParamSpec('P')
-AudioGenerator = Generator[Out, int, None]
+AudioGenerator = Generator[Out, int, None] | AsyncGenerator[Out, None]
 GeneratorFactory: TypeAlias = Callable[Concatenate[In, Params], AudioGenerator]
 Args: TypeAlias = Tuple[Any, ...]
 Kwargs: TypeAlias = Dict[str, Any]
@@ -388,7 +389,8 @@ class AudioPipeline: # NOTE: All of AudioPipeline have been AI-generated and tes
         result = source
         for func, args, kwargs in self.transforms:
             result = func(result, *args, **kwargs)
-            next(result)  # Consume initialization yield
+            if isinstance(result, GeneratorType): # Ignore if it's `AsyncGeneratorType`
+                next(result)  # Consume initialization yield
         return result
 
     def compile(self) -> GeneratorFactory:
