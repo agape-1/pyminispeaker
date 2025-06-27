@@ -151,10 +151,8 @@ class Speakers:
         processor = AudioPipeline() # AudioPipeline chaining is AI-generated and modified for correctness
         if isinstance(audio, AsyncIterator):
             audio = stream_async_as_generator(audio)
-            next(audio)
         if isinstance(audio, Iterator):
             audio = stream_as_generator(audio)
-            next(audio)
         if isinstance(audio, str):
             processor >>= (stream_numpy_pcm_memory, {
                 "output_format": self.sample_format,
@@ -162,8 +160,9 @@ class Speakers:
                 "sample_rate": self.sample_rate
         })
         elif isinstance(audio, AsyncGeneratorType):
-            audio = stream_async_buffer(audio, max_buffer_chunks=3) # TODO: Make `max_buffer_chunks` accessible from higher level interface
-            processor >>= (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))})
+            processor = (processor 
+                >> (stream_async_buffer, {"max_buffer_chunks": 3})
+                >> (poll_async_generator, {"loop": loop, "default_empty_factory": lambda: np.empty((0, self.channels))}))
         elif isinstance(audio, GeneratorType):
             if getgeneratorstate(audio) == GEN_CREATED:
                 warn(f"Generator {audio} has not started. Please modify the generator to initially `yield b""`, or else the first audio chunk will skipped. Skipping the first audio chunk...")
