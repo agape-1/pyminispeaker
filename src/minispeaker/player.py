@@ -280,6 +280,7 @@ class Speakers:
             audio = stream_async_as_generator(audio)
         if isinstance(audio, Iterator):
             audio = stream_as_generator(audio)
+            next(audio)
 
         if not isinstance(audio, (str, GeneratorType, AsyncGeneratorType)):
             raise TypeError(f"{audio} is not a string, iterator, or a generator")
