@@ -69,7 +69,7 @@ speakers.wait()
 > [!TIP]
 > If the default `SAMPLE_RATE` is under API tier restrictions, you can directly lower`output_format`'s sample rate.
 
-## Asychronous Version
+## Asynchronous Version
 
 ```python
 import asyncio
