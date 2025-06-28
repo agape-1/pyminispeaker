@@ -1,4 +1,4 @@
-# Workflow completely AI-generated
+# Workflow completely AI-generated and manually end to end tested 
 name: Publish to PyPI
 
 on:
