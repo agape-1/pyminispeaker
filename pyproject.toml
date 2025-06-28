@@ -36,7 +36,7 @@ minispeaker = "minispeaker:main"
 
 
 [project.urls]
-Homepage = "https://github.com/agape-1/pyminispeaker/"
+Homepage = "https://agape-1.github.io/pyminispeaker/"
 Repository = "https://github.com/agape-1/pyminispeaker/"
 
 [build-system]
