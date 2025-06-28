@@ -65,7 +65,7 @@ with client.audio.speech.with_streaming_response.create(
     speaker["My first TTS request"].wait() # Wait for the audio to finish playing
 ```
 
-## Asychronous Version
+## Asynchronous Version
 
 ```python
 from openai import AsyncOpenAI
