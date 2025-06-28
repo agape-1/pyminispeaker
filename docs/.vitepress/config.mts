@@ -6,7 +6,7 @@ import type { ThemeConfig } from 'vitepress-carbon/config'
 const vitePressSidebarOptions = {
   hyphenToSpace: true,
   capitalizeFirst: true,
-  useFolderLinkFromIndexFile: true,
+  useFolderLinkFromIndexFile: false,
   useFolderTitleFromIndexFile: true,
   keepMarkdownSyntaxFromTitle: true,
   useTitleFromFileHeading: true,
